@@ -1,9 +1,10 @@
 from Models.Activity import Activity
 from Models.Job import Job
+from Models.Airline import Airline
 from typing import List
 
 class Airport:
-    def __init__(self, IATA_code: str, name: str, city: str, country: str, time_zone: str, isHub: bool, accommodation_cost: float, alimentation_cost: float, activities: List[Activity] = [], jobs: List[Job] = []) -> None:
+    def __init__(self, IATA_code: str, name: str, city: str, country: str, time_zone: str, isHub: bool, accommodation_cost: float, alimentation_cost: float, airlines: List[Airline] = [], activities: List[Activity] = [], jobs: List[Job] = []) -> None:
         self._IATA_code = IATA_code
         self._name = name
         self._city = city
@@ -12,5 +13,6 @@ class Airport:
         self._isHub = isHub
         self._accommodation_cost = accommodation_cost
         self._alimentation_cost = alimentation_cost
+        self._airlines = airlines
         self._activities = activities
         self._jobs = jobs
