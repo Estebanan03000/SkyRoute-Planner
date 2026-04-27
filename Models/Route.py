@@ -1,8 +1,8 @@
-from typing import List
+from typing import List, Optional
 from Models.Aircraft import Aircraft
 
 class Route:
-    def __init__(self, IATA_origin: str, IATA_destiny: str, distance_in_km: float, minimum_stay: int, is_subsidized: bool, base_cost: float, aircraft: List[Aircraft] = []) -> None:
+    def __init__(self, IATA_origin: str, IATA_destiny: str, distance_in_km: float, minimum_stay: int, is_subsidized: bool, base_cost: float, aircraft: Optional[List[Aircraft]] = None) -> None:
         self._IATA_origin = IATA_origin
         self._IATA_destiny = IATA_destiny
         self._distance_in_km = distance_in_km
@@ -12,4 +12,49 @@ class Route:
             self._base_cost = 0
         else:
             self._base_cost = base_cost
-        self._aircraft = aircraft
+        self._aircraft = list(aircraft) if aircraft is not None else []
+
+    def get_IATA_origin(self) -> str:
+        return self._IATA_origin
+
+    def get_IATA_destiny(self) -> str:
+        return self._IATA_destiny
+
+    def get_distance_in_km(self) -> float:
+        return self._distance_in_km
+
+    def get_minimum_stay(self) -> int:
+        return self._minimum_stay
+
+    def get_is_subsidized(self) -> bool:
+        return self._is_subsidized
+
+    def get_base_cost(self) -> float:
+        return self._base_cost
+
+    def get_aircraft(self) -> List[Aircraft]:
+        return self._aircraft
+    
+    def set_IATA_origin(self, IATA_origin: str) -> None:
+        self._IATA_origin = IATA_origin
+
+    def set_IATA_destiny(self, IATA_destiny: str) -> None:
+        self._IATA_destiny = IATA_destiny
+
+    def set_distance_in_km(self, distance_in_km: float) -> None:
+        self._distance_in_km = distance_in_km
+
+    def set_minimum_stay(self, minimum_stay: int) -> None:
+        self._minimum_stay = minimum_stay
+
+    def set_is_subsidized(self, is_subsidized: bool) -> None:
+        self._is_subsidized = is_subsidized
+        if is_subsidized:
+            self._base_cost = 0
+
+    def set_base_cost(self, base_cost: float) -> None:
+        if not self._is_subsidized:
+            self._base_cost = base_cost
+
+    def set_aircraft(self, aircraft: List[Aircraft]) -> None:
+        self._aircraft = list(aircraft)
