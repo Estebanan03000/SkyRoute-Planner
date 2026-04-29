@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 from Models.Activity import Activity
 from Models.Job import Job
 from Models.Airline import Airline
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Models.Route import Route
 
 class Airport:
     def __init__(self, IATA_code: str, name: str, city: str, country: str, time_zone: str, isHub: bool, accommodation_cost: float, alimentation_cost: float, airlines: Optional[List[Airline]] = None, activities: Optional[List[Activity]] = None, jobs: Optional[List[Job]] = None) -> None:
@@ -16,6 +21,7 @@ class Airport:
         self._airlines = list(airlines) if airlines is not None else []
         self._activities = list(activities) if activities is not None else []
         self._jobs = list(jobs) if jobs is not None else []
+        self._adjacencies = []
 
     def get_IATA_code(self) -> str:
         return self._IATA_code
@@ -50,6 +56,9 @@ class Airport:
     def get_jobs(self) -> List[Job]:
         return self._jobs
     
+    def get_adjacencies(self) -> List[Route]:
+        return self._adjacencies
+    
     def set_IATA_code(self, IATA_code: str) -> None:
         self._IATA_code = IATA_code
 
@@ -82,3 +91,9 @@ class Airport:
 
     def set_jobs(self, jobs: List[Job]) -> None:
         self._jobs = list(jobs)
+
+    def set_adjacencies(self, adjacencies: List[Route]) -> None:
+        self._adjacencies = list(adjacencies)
+
+    def add_adjacencies(self, route: Route) -> None:
+        self._adjacencies.append(route)
