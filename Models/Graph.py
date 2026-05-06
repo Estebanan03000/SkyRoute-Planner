@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from typing import List, Optional
 from Models.Airport import Airport
+from Models.Queue import Queue
+from Models.Stack import Stack
 
 class Graph:
     def __init__(self):
@@ -17,6 +19,30 @@ class Graph:
 
     def add_airport(self, airport: Airport) -> None:
         self._airports.append(airport)
+
+    def BFS(self, start_airport: Airport) -> list[Airport]:
+        visited = [start_airport]
+        queue = Queue()
+        queue.enqueue(start_airport)
+        while not queue.is_empty():
+            current_airport = queue.dequeue()
+            for adjacent_airport in current_airport.get_adjacencies():
+                if adjacent_airport.get_destiny_airport() not in visited:
+                    visited.append(adjacent_airport.get_destiny_airport())
+                    queue.enqueue(adjacent_airport.get_destiny_airport())
+        return visited
+    
+    def DFS(self, start_airport: Airport) -> list[Airport]:
+        visited = [start_airport]
+        stack = Stack()
+        stack.push(start_airport)
+        while not stack.is_empty():
+            current_airport = stack.pop()
+            for adjacent_airport in current_airport.get_adjacencies():
+                if adjacent_airport.get_destiny_airport() not in visited:
+                    visited.append(adjacent_airport.get_destiny_airport())
+                    stack.push(adjacent_airport.get_destiny_airport())
+        return visited
 
     def visualize(self) -> None:
         G = nx.DiGraph()
@@ -197,9 +223,9 @@ class Graph:
         route_colors = ['red' if (x, y) in routes else '#cccccc' for x, y in G.edges()]
         routes_widths = [3.5 if (x, y) in routes else 1 for x, y in G.edges()]
         airport_colors = ['orange' if node == path[0] else
-                          'lightgreen' if node == path[-1] else
-                          '#ff6b6b' if node in path else
-                          'lightblue' for node in G.nodes()]
+                            'lightgreen' if node == path[-1] else
+                            '#ff6b6b' if node in path else
+                            'lightblue' for node in G.nodes()]
         pos = nx.spring_layout(G, seed=42)
         route_labels = self._get_unique_edge_labels(G)
 
@@ -219,19 +245,19 @@ class Graph:
                                 font_size=12,
                                 font_weight='bold',
                                 bbox=dict(boxstyle="round,pad=0.3",
-                                          fc="white",
-                                          ec="none",
-                                          alpha=0.8))
+                                            fc="white",
+                                            ec="none",
+                                            alpha=0.8))
 
         nx.draw_networkx_edge_labels(G, pos,
-                                     edge_labels=route_labels,
-                                     font_size=9,
-                                     font_color='black',
-                                     bbox=dict(boxstyle="round,pad=0.2",
-                                               fc="white",
-                                               ec="none",
-                                               alpha=0.9),
-                                     label_pos=0.35)
+                                        edge_labels=route_labels,
+                                        font_size=9,
+                                        font_color='black',
+                                        bbox=dict(boxstyle="round,pad=0.2",
+                                                fc="white",
+                                                ec="none",
+                                                alpha=0.9),
+                                        label_pos=0.35)
 
         legend_elements = [
             Patch(color='orange',    label=f'Start ({path[0]})'),
