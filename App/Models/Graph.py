@@ -3,9 +3,9 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from typing import List, Optional
-from Models.Airport import Airport
-from Models.Queue import Queue
-from Models.Stack import Stack
+from App.Models.Airport import Airport
+from App.Models.Queue import Queue
+from App.Models.Stack import Stack
 
 class Graph:
     def __init__(self):

@@ -13,7 +13,7 @@ class PlanningService:
         if actualBudget < (budget * 0.35):
             if self.selected_job is not None:
                 raise Exception("You cannot apply a job when the actual budget is over 35% of the total budget")
-            if hours > self._actualAirports.getJobs()[self.selected_job].get_max_hours():
+.venv\Scripts\activate
                 raise Exception("You cannot apply a job when the hours exceed the maximum hours for that job")
             self._work(actualBudget, hours)
     

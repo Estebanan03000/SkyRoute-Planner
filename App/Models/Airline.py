@@ -1,4 +1,4 @@
-from Models.Aircraft import Aircraft
+from App.Models.Aircraft import Aircraft
 from typing import List, Optional
 
 class Airline:

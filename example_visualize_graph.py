@@ -1,7 +1,7 @@
-from Models.Graph import Graph
-from Models.Airport import Airport
-from Models.Aircraft import Aircraft
-from Models.Route import Route
+from App.Models.Graph import Graph
+from App.Models.Airport import Airport
+from App.Models.Aircraft import Aircraft
+from App.Models.Route import Route
 
 
 def build_sample_graph() -> Graph:

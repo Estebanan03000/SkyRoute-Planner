@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from Models.Activity import Activity
-from Models.Job import Job
-from Models.Airline import Airline
+from App.Models.Activity import Activity
+from App.Models.Job import Job
+from App.Models.Airline import Airline
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from Models.Route import Route
+    from App.Models.Route import Route
 
 class Airport:
     def __init__(self, IATA_code: str, name: str, city: str, country: str, time_zone: str, isHub: bool, accommodation_cost: float, alimentation_cost: float, airlines: Optional[List[Airline]] = None, activities: Optional[List[Activity]] = None, jobs: Optional[List[Job]] = None) -> None:

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from typing import List, Optional, TYPE_CHECKING
-from Models.Aircraft import Aircraft
+from App.Models.Aircraft import Aircraft
 
 if TYPE_CHECKING:
-    from Models.Airport import Airport
+    from App.Models.Airport import Airport
 
 class Route:
     def __init__(self, destiny_airport: Airport, distance_in_km: float, minimum_stay: int, is_subsidized: bool, base_cost: float, aircraft: Optional[List[Aircraft]] = None) -> None:
