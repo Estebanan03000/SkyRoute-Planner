@@ -1,11 +1,23 @@
 import math
-
 from typing import List, Optional
+
 from App.Models.Graph import Graph
+from App.Services.TravelReportService import TravelReportService
 
 
 class PlanningService:
+    """
+    Service responsible for route planning, optimization,
+    budget/time-constrained travel simulation, and job management.
+    """
+
     def __init__(self, graph: Graph) -> None:
+        """
+        Initializes the planning service with a graph instance.
+
+        Args:
+            graph (Graph): Graph containing airports and routes.
+        """
         self._graph = graph
 
     def calculate_best_route(
@@ -16,6 +28,21 @@ class PlanningService:
         include_secondary_airports: bool = True,
         allowed_aircraft_types: Optional[List[str]] = None
     ) -> dict:
+        """
+        Calculates the best route between two airports using multiple criteria.
+
+        Each criterion is evaluated independently using Dijkstra's algorithm.
+
+        Args:
+            origin_iata (str): Starting airport IATA code.
+            destination_iata (str): Destination airport IATA code.
+            criteria (List[str]): Optimization criteria (e.g., cost, time).
+            include_secondary_airports (bool): Whether to include non-hub airports.
+            allowed_aircraft_types (Optional[List[str]]): Filter by aircraft types.
+
+        Returns:
+            dict: Dictionary containing results per optimization criterion.
+        """
         results = {}
 
         for criterion in criteria:
@@ -36,6 +63,18 @@ class PlanningService:
         include_secondary_airports: bool = True,
         allowed_aircraft_types: Optional[List[str]] = None
     ) -> dict:
+        """
+        Calculates the maximum number of destinations reachable within a budget constraint.
+
+        Args:
+            origin_iata (str): Starting airport IATA code.
+            initial_budget (float): Maximum allowed budget.
+            include_secondary_airports (bool): Whether to include non-hub airports.
+            allowed_aircraft_types (Optional[List[str]]): Aircraft restrictions.
+
+        Returns:
+            dict: Travel simulation results under budget constraint.
+        """
         return self._calculate_max_destinations(
             origin_iata=origin_iata,
             limit=initial_budget,
@@ -51,6 +90,18 @@ class PlanningService:
         include_secondary_airports: bool = True,
         allowed_aircraft_types: Optional[List[str]] = None
     ) -> dict:
+        """
+        Calculates the maximum number of destinations reachable within a time constraint.
+
+        Args:
+            origin_iata (str): Starting airport IATA code.
+            available_hours (float): Total available travel time in hours.
+            include_secondary_airports (bool): Whether to include non-hub airports.
+            allowed_aircraft_types (Optional[List[str]]): Aircraft restrictions.
+
+        Returns:
+            dict: Travel simulation results under time constraint.
+        """
         available_minutes = available_hours * 60
 
         return self._calculate_max_destinations(
@@ -71,6 +122,21 @@ class PlanningService:
         include_secondary_airports: bool = True,
         allowed_aircraft_types: Optional[List[str]] = None
     ) -> dict:
+        """
+        Blocks a route and recalculates a new optimal path.
+
+        Args:
+            blocked_origin_iata (str): Origin of blocked route.
+            blocked_destination_iata (str): Destination of blocked route.
+            current_origin_iata (str): Current position of the traveler.
+            final_destination_iata (str): Final travel destination.
+            criterion (str): Optimization criterion (cost or time).
+            include_secondary_airports (bool): Include non-hub airports.
+            allowed_aircraft_types (Optional[List[str]]): Aircraft restrictions.
+
+        Returns:
+            dict: Status of block operation and new computed route.
+        """
         was_blocked = self._graph.block_route(
             blocked_origin_iata,
             blocked_destination_iata
@@ -105,6 +171,20 @@ class PlanningService:
         include_secondary_airports: bool,
         allowed_aircraft_types: Optional[List[str]]
     ) -> dict:
+        """
+        Internal greedy algorithm to maximize reachable destinations
+        under a budget or time constraint.
+
+        Args:
+            origin_iata (str): Starting airport.
+            limit (float): Maximum allowed cost/time.
+            criterion (str): Optimization criterion.
+            include_secondary_airports (bool): Include non-hub airports.
+            allowed_aircraft_types (Optional[List[str]]): Aircraft restrictions.
+
+        Returns:
+            dict: Travel simulation result including visited nodes and total cost.
+        """
         origin_airport = self._graph.find_airport_by_iata(origin_iata)
 
         if origin_airport is None:
@@ -155,6 +235,21 @@ class PlanningService:
         include_secondary_airports: bool,
         allowed_aircraft_types: Optional[List[str]]
     ) -> Optional[dict]:
+        """
+        Finds the best next destination using a greedy selection strategy
+        based on the selected optimization criterion.
+
+        Args:
+            current_iata (str): Current airport.
+            visited (List[str]): Already visited airports.
+            remaining_limit (float): Remaining budget/time.
+            criterion (str): Optimization criterion.
+            include_secondary_airports (bool): Include non-hub airports.
+            allowed_aircraft_types (Optional[List[str]]): Aircraft restrictions.
+
+        Returns:
+            Optional[dict]: Best next destination and its route data.
+        """
         best_option = None
         best_weight = math.inf
 
@@ -191,3 +286,6 @@ class PlanningService:
                 }
 
         return best_option
+
+
+
