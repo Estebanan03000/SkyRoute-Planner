@@ -42,14 +42,14 @@ class JSONService:
             return json.load(file)
 
     def _build_aircraft_config(self, data: dict) -> dict:
-        aircraft_config = self.DEFAULT_AIRCRAFT_CONFIG.copy()
+        aircraft_config = {}
 
         custom_config = data.get("configuracionGlobal", {}).get("aeronaves", {})
 
         for aircraft_name, values in custom_config.items():
             aircraft_config[aircraft_name] = {
-                "costKm": values.get("costKm", aircraft_config.get(aircraft_name, {}).get("costKm", 0)),
-                "timeKm": values.get("timeKm", aircraft_config.get(aircraft_name, {}).get("timeKm", 0))
+                "costKm": values.get("costoKm", 0),
+                "timeKm": values.get("tiempoKm", 0)
             }
 
         return aircraft_config
