@@ -4,8 +4,7 @@ from typing import Optional, Tuple
 from App.Models.Graph import Graph
 from App.Models.TravelState import TravelState
 from App.Services.InteractiveJourneySimulator import InteractiveJourneySimulator
-from App.Services.ActivityScheduleService import ActivityScheduleService
-from App.Services.DynamicBudgetPlanningService import DynamicBudgetPlanningService
+from App.Services.PlanningService import PlanningService
 from App.Services.DetailedJourneyReportService import DetailedJourneyReportService
 from App.DataAccess.JSONService import JSONService
 
@@ -15,7 +14,7 @@ main_routes = Blueprint("main_routes", __name__)
 # Initialize services on application startup
 _graph: Optional[Graph] = None
 _journey_simulator: Optional[InteractiveJourneySimulator] = None
-_budget_planner: Optional[DynamicBudgetPlanningService] = None
+_planning_service: Optional[PlanningService] = None
 
 # Active journeys storage (in-memory for demo, could use database)
 _active_journeys: dict = {}
@@ -23,17 +22,17 @@ _active_journeys: dict = {}
 
 def _initialize_services() -> None:
     """Initialize all services (called on first request)."""
-    global _graph, _journey_simulator, _budget_planner
+    global _graph, _journey_simulator, _planning_service
 
     if _graph is None:
         json_service = JSONService()
         _graph = json_service.load_airports_and_build_graph()
 
-    if _journey_simulator is None:
-        _journey_simulator = InteractiveJourneySimulator(_graph)
+    if _planning_service is None:
+        _planning_service = PlanningService(_graph)
 
-    if _budget_planner is None:
-        _budget_planner = DynamicBudgetPlanningService(_graph)
+    if _journey_simulator is None:
+        _journey_simulator = InteractiveJourneySimulator(_graph, _planning_service)
 
 
 # ==================== Health Check Endpoint ====================
@@ -347,7 +346,7 @@ def get_route_suggestions(journey_id: str):
         exploration_depth = request.args.get("depth", 50, type=int)
 
         # Find suggestions
-        suggestions = _budget_planner.find_optimal_destination_sequence(
+        suggestions = _planning_service.find_optimal_destination_sequence(
             travel_state.get_current_airport().get_IATA_code(),
             travel_state.get_current_budget(),
             max_destinations,
@@ -402,3 +401,8 @@ def reset_journey(journey_id: str):
 
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+
+def initialize_planning_service() -> None:
+    """Initialize internal service instances for app startup."""
+    _initialize_services()

@@ -2,7 +2,7 @@ from typing import Optional, List, Tuple
 from App.Models.TravelState import TravelState
 from App.Models.TravelDecision import TravelDecision
 from App.Models.Graph import Graph
-from App.Services.ActivityScheduleService import ActivityScheduleService
+from App.Services.PlanningService import PlanningService
 
 
 class InteractiveJourneySimulator:
@@ -12,18 +12,58 @@ class InteractiveJourneySimulator:
     Tracks budget, time, and all decisions made during the journey.
     """
 
-    def __init__(self, graph: Graph) -> None:
+    def __init__(self, graph: Graph, planning_service: PlanningService) -> None:
         """
         Initialize the interactive journey simulator.
 
         Args:
             graph: Graph object containing airport network
+            planning_service: Combined planning service for travel and activity logic
         """
         self._graph: Graph = graph
-        self._activity_service: ActivityScheduleService = ActivityScheduleService(graph)
+        self._planning_service: PlanningService = planning_service
 
         # Active journey tracking
         self._active_journeys: dict = {}
+
+    def _is_valid_decision_type(self, decision_type: Optional[str]) -> bool:
+        return decision_type in [
+            "ACTIVITY", "JOB", "FLIGHT", "SKIP", "MEAL", "ACCOMMODATION"
+        ]
+
+    def _select_activity(self, airport, activity_id: str) -> Optional[dict]:
+        for activity in self._planning_service.get_available_activities(airport):
+            if activity["id"] == activity_id:
+                return activity
+        return None
+
+    def _select_job(
+        self,
+        airport,
+        job_id: str,
+        current_budget: float,
+        initial_budget: float
+    ) -> Optional[dict]:
+        for job in self._planning_service.get_available_jobs(
+            airport,
+            current_budget,
+            initial_budget
+        ):
+            if job["id"] == job_id:
+                return job
+        return None
+
+    def _select_aircraft(self, aircraft_options, aircraft_id: Optional[str]):
+        if not aircraft_options:
+            return None
+
+        if aircraft_id:
+            for aircraft in aircraft_options:
+                if aircraft.get_id() == aircraft_id:
+                    return aircraft
+            return None
+
+        return aircraft_options[0]
 
     # ==================== Journey Initialization ====================
 
@@ -92,7 +132,7 @@ class InteractiveJourneySimulator:
         current_budget = current_state.get_current_budget()
 
         # ==================== Mandatory Costs ====================
-        mandatory_costs = self._activity_service.calculate_mandatory_costs(
+        mandatory_costs = self._planning_service.calculate_mandatory_costs(
             airport,
             current_state.get_hours_since_last_accommodation(),
             current_state.get_hours_since_last_meal(),
@@ -100,17 +140,17 @@ class InteractiveJourneySimulator:
         )
 
         # ==================== Available Activities ====================
-        optional_activities = self._activity_service.get_available_activities(airport)
+        optional_activities = self._planning_service.get_available_activities(airport)
 
         # ==================== Available Jobs ====================
-        available_jobs = self._activity_service.get_available_jobs(
-            airport, 
-            current_budget, 
+        available_jobs = self._planning_service.get_available_jobs(
+            airport,
+            current_budget,
             current_state.get_initial_budget()
         )
 
         # ==================== Flight Options ====================
-        next_flights = self._activity_service.calculate_next_flight_options(
+        next_flights = self._planning_service.calculate_next_flight_options(
             airport.get_IATA_code(),
             current_budget
         )
@@ -118,7 +158,7 @@ class InteractiveJourneySimulator:
         # ==================== Time Availability ====================
         # Assume minimum stay = minimum required time to legally leave airport
         min_stay_minutes = 90  # Standard minimum stay
-        time_info = self._activity_service.calculate_available_time_at_airport(
+        time_info = self._planning_service.calculate_available_time_at_airport(
             min_stay_minutes
         )
 
@@ -184,11 +224,18 @@ class InteractiveJourneySimulator:
         """
         decision_type = decision.get("type")
 
-        # Validate decision type
-        if decision_type not in ["ACTIVITY", "JOB", "FLIGHT", "SKIP", "MEAL", "ACCOMMODATION"]:
+        if not self._is_valid_decision_type(decision_type):
             return False, current_state, None, "Invalid decision type"
 
-        # Route to appropriate handler
+        if decision_type == "SKIP":
+            travel_decision = TravelDecision(
+                "SKIP",
+                current_state.get_current_airport().get_IATA_code(),
+                "No action"
+            )
+            current_state.add_decision(travel_decision.to_dict())
+            return True, current_state, travel_decision, "No action taken"
+
         if decision_type == "ACTIVITY":
             return self._execute_activity_decision(current_state, decision)
         elif decision_type == "JOB":
@@ -199,8 +246,8 @@ class InteractiveJourneySimulator:
             return self._execute_meal_decision(current_state, decision)
         elif decision_type == "ACCOMMODATION":
             return self._execute_accommodation_decision(current_state, decision)
-        else:
-            return False, current_state, None, "Unknown decision type"
+
+        return False, current_state, None, "Unknown decision type"
 
     # ==================== Decision Handlers ====================
 
@@ -213,15 +260,7 @@ class InteractiveJourneySimulator:
         airport = current_state.get_current_airport()
         activity_id = decision.get("activity_id")
 
-        # Get available activities
-        activities = self._activity_service.get_available_activities(airport)
-
-        # Find selected activity
-        selected_activity = None
-        for activity in activities:
-            if activity["id"] == activity_id:
-                selected_activity = activity
-                break
+        selected_activity = self._select_activity(airport, activity_id)
 
         if not selected_activity:
             return False, current_state, None, "Activity not found"
@@ -270,15 +309,12 @@ class InteractiveJourneySimulator:
         job_id = decision.get("job_id")
         hours_to_work = decision.get("hours", 1.0)
 
-        # Get available jobs
-        jobs = self._activity_service.get_available_jobs(airport)
-
-        # Find selected job
-        selected_job = None
-        for job in jobs:
-            if job["id"] == job_id:
-                selected_job = job
-                break
+        selected_job = self._select_job(
+            airport,
+            job_id,
+            current_state.get_current_budget(),
+            current_state.get_initial_budget()
+        )
 
         if not selected_job:
             return False, current_state, None, "Job not found"
@@ -362,16 +398,7 @@ class InteractiveJourneySimulator:
         if not available_aircraft:
             return False, current_state, None, "No aircraft available for this route"
 
-        # Select aircraft based on provided ID or use first available
-        selected_aircraft = None
-        if aircraft_id:
-            for aircraft in available_aircraft:
-                if aircraft.get_id() == aircraft_id:
-                    selected_aircraft = aircraft
-                    break
-        else:
-            selected_aircraft = available_aircraft[0]  # Default: first available
-
+        selected_aircraft = self._select_aircraft(available_aircraft, aircraft_id)
         if not selected_aircraft:
             return False, current_state, None, "Selected aircraft not available"
 
@@ -398,7 +425,7 @@ class InteractiveJourneySimulator:
             new_subsidized = current_subsidized + distance_km
             new_total = current_total + distance_km
 
-            subsidy_check = self._activity_service.validate_subsidized_distance_limit(
+            subsidy_check = self._planning_service.validate_subsidized_distance_limit(
                 new_total, new_subsidized
             )
             if not subsidy_check["is_valid"]:
@@ -550,7 +577,7 @@ class InteractiveJourneySimulator:
             return False
 
         # Check if flights are available
-        flights = self._activity_service.calculate_next_flight_options(
+        flights = self._planning_service.calculate_next_flight_options(
             current_state.get_current_airport().get_IATA_code(),
             current_state.get_current_budget()
         )
