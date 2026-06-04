@@ -25,8 +25,8 @@ def _initialize_services() -> None:
     global _graph, _journey_simulator, _planning_service
 
     if _graph is None:
-        json_service = JSONService()
-        _graph = json_service.load_airports_and_build_graph()
+        json_service = JSONService("App/Models/airport.json")
+        _graph = json_service.load_graph()
 
     if _planning_service is None:
         _planning_service = PlanningService(_graph)
