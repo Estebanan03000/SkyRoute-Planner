@@ -37,8 +37,8 @@ def _initialize_services() -> None:
 
 # ==================== Health Check Endpoint ====================
 
-@main_routes.route("/")
-def home():
+@main_routes.route("/api/")
+def api_root():
     """
     Health check endpoint for API availability.
     """

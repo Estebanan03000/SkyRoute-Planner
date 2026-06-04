@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyRoute Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='Style/components.css') }}">
+    <script type="module" src="{{ url_for('static', filename='JavaScript/controllerUI.js') }}"></script>
+</head>
+<body>
+    <main>
+        <h1>SkyRoute Planner</h1>
+
+        <section>
+            <h2>Visualización del Grafo</h2>
+            <div id="graph-container">
+                <p>El grafo aparecerá aquí</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Iniciar viaje</h2>
+            <div>
+                <label for="origin">Origen:</label>
+                <input id="origin" type="text" value="GRU">
+            </div>
+            <div>
+                <label for="budget">Presupuesto:</label>
+                <input id="budget" type="number" value="500">
+            </div>
+            <div>
+                <label for="traveler">Viajero:</label>
+                <input id="traveler" type="text" value="Juan">
+            </div>
+            <button id="startJourney">Iniciar viaje</button>
+        </section>
+
+        <section>
+            <h2>Viaje activo</h2>
+            <div>
+                <label for="journeyId">Journey ID:</label>
+                <input id="journeyId" type="text" placeholder="j_12345">
+            </div>
+            <button id="getState">Obtener estado</button>
+            <button id="getLog">Obtener historial</button>
+            <button id="getReport">Generar reporte</button>
+            <button id="getSuggestions">Sugerencias de ruta</button>
+            <button id="resetJourney">Resetear viaje</button>
+        </section>
+
+        <section>
+            <h2>Decisión de vuelo</h2>
+            <div>
+                <label for="destination">Destino (IATA):</label>
+                <input id="destination" type="text" value="GIG">
+            </div>
+            <button id="executeDecision">Ejecutar vuelo</button>
+        </section>
+
+        <section>
+            <h2>Respuesta del servidor</h2>
+            <pre id="response"></pre>
+        </section>
+    </main>
+</body>
+</html>

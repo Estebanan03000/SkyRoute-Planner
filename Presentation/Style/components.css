@@ -1,0 +1,98 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f9;
+    color: #333;
+    padding: 20px;
+}
+
+main {
+    max-width: 1200px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #1e3a8a;
+}
+
+p {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+section {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+h2 {
+    margin-bottom: 15px;
+    color: #2563eb;
+}
+
+section div {
+    margin-bottom: 12px;
+}
+
+label {
+    display: inline-block;
+    width: 130px;
+    font-weight: bold;
+}
+
+input {
+    width: 220px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    border-radius: 6px;
+    background-color: #2563eb;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+#response {
+    background: #1e293b;
+    color: #f8fafc;
+    padding: 15px;
+    border-radius: 8px;
+    min-height: 200px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+}
+
+/* Contenedor del grafo */
+#graph-container {
+    width: 100%;
+    height: 500px;
+    border: 2px dashed #94a3b8;
+    border-radius: 8px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #64748b;
+    font-size: 1.1rem;
+}
