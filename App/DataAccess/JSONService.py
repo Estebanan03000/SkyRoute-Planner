@@ -1,4 +1,5 @@
 import json
+import os
 from App.Models.Graph import Graph
 from App.Models.Airport import Airport
 from App.Models.Route import Route
@@ -15,6 +16,13 @@ class JSONService:
     }
 
     def __init__(self, file_path: str) -> None:
+        if not os.path.isabs(file_path):
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            if file_path.startswith("App" + os.sep) or file_path.startswith("App/"):
+                project_root = os.path.normpath(os.path.join(base_dir, "..", ".."))
+                file_path = os.path.normpath(os.path.join(project_root, file_path))
+            else:
+                file_path = os.path.normpath(os.path.join(base_dir, file_path))
         self._file_path = file_path
         self._global_config = {}
 

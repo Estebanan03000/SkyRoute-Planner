@@ -15,6 +15,33 @@
             <h2>Visualización del Grafo</h2>
             <div id="graph-container">
                 <p>El grafo aparecerá aquí</p>
+                <img id="graphImage" alt="Graph visualization" style="max-width:100%; height:auto; display:none;" />
+            </div>
+        </section>
+
+        <section>
+            <h2>Controles del grafo</h2>
+            <div>
+                <label for="graphStart">Inicio (IATA):</label>
+                <input id="graphStart" type="text" value="GRU">
+            </div>
+            <div>
+                <label for="graphEnd">Destino (IATA):</label>
+                <input id="graphEnd" type="text" value="GIG">
+            </div>
+            <button id="showGraph">Mostrar grafo</button>
+            <button id="runDijkstraCost">Dijkstra por costo</button>
+            <button id="runDijkstraTime">Dijkstra por tiempo</button>
+        </section>
+
+        <section id="graphDetailsSection">
+            <div id="graphPanel" class="detail-panel" hidden>
+                <h3>Grafo</h3>
+                <div id="graphContent" class="detail-content"></div>
+            </div>
+            <div id="dijkstraPanel" class="detail-panel" hidden>
+                <h3>Resultado Dijkstra</h3>
+                <div id="dijkstraContent" class="detail-content"></div>
             </div>
         </section>
 
@@ -29,10 +56,55 @@
                 <input id="budget" type="number" value="500">
             </div>
             <div>
+                <label for="initialTime">Tiempo inicial (min):</label>
+                <input id="initialTime" type="number" min="0" value="1440">
+            </div>
+            <div>
                 <label for="traveler">Viajero:</label>
                 <input id="traveler" type="text" value="Juan">
             </div>
             <button id="startJourney">Iniciar viaje</button>
+        </section>
+
+        <section>
+            <h2>Decisión de viaje</h2>
+            <div>
+                <label for="decisionType">Tipo de decisión:</label>
+                <select id="decisionType">
+                    <option value="FLIGHT" selected>Vuelo</option>
+                    <option value="JOB">Trabajo</option>
+                    <option value="ACTIVITY">Actividad</option>
+                    <option value="MEAL">Comida</option>
+                    <option value="ACCOMMODATION">Alojamiento</option>
+                </select>
+            </div>
+            <div id="decisionFields">
+                <div class="decision-field" data-type="FLIGHT">
+                    <label for="destination">Destino (IATA):</label>
+                    <input id="destination" type="text" value="GIG">
+                </div>
+                <div class="decision-field" data-type="JOB" hidden>
+                    <div>
+                        <label for="jobId">Trabajo disponible:</label>
+                        <select id="jobId">
+                            <option value="">Seleccione un trabajo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="jobHours">Horas:</label>
+                        <input id="jobHours" type="number" min="1" value="3">
+                    </div>
+                </div>
+                <div class="decision-field" data-type="ACTIVITY" hidden>
+                    <div>
+                        <label for="activityId">Actividad:</label>
+                        <select id="activityId">
+                            <option value="">Seleccione una actividad</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button id="executeDecision">Ejecutar decisión</button>
         </section>
 
         <section>
@@ -48,19 +120,32 @@
             <button id="resetJourney">Resetear viaje</button>
         </section>
 
-        <section>
-            <h2>Decisión de vuelo</h2>
-            <div>
-                <label for="destination">Destino (IATA):</label>
-                <input id="destination" type="text" value="GIG">
+        <section id="detailsSection">
+            <h2>Información del viaje</h2>
+            <div id="statePanel" class="detail-panel" hidden>
+                <h3>Estado actual</h3>
+                <div id="stateContent" class="detail-content"></div>
             </div>
-            <button id="executeDecision">Ejecutar vuelo</button>
+            <div id="logPanel" class="detail-panel" hidden>
+                <h3>Historial de viaje</h3>
+                <div id="logContent" class="detail-content"></div>
+            </div>
+            <div id="reportPanel" class="detail-panel" hidden>
+                <h3>Reporte del viaje</h3>
+                <div id="reportContent" class="detail-content"></div>
+            </div>
+            <div id="suggestionsPanel" class="detail-panel" hidden>
+                <h3>Sugerencias de ruta</h3>
+                <div id="suggestionsContent" class="detail-content"></div>
+            </div>
         </section>
 
-        <section>
+        <section id="responseSection" hidden>
             <h2>Respuesta del servidor</h2>
             <pre id="response"></pre>
         </section>
     </main>
+
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>

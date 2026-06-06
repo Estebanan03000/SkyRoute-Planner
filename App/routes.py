@@ -1,5 +1,6 @@
 "Main flask application routes for the SkyRoute package."
-from flask import Blueprint, request, jsonify
+from io import BytesIO
+from flask import Blueprint, request, jsonify, send_file
 from typing import Optional, Tuple
 from App.Models.Graph import Graph
 from App.Models.TravelState import TravelState
@@ -35,6 +36,57 @@ def _initialize_services() -> None:
         _journey_simulator = InteractiveJourneySimulator(_graph, _planning_service)
 
 
+def _serialize_graph() -> dict:
+    airports = []
+    routes = []
+
+    for airport in _graph.get_airports():
+        airports.append({
+            "iata": airport.get_IATA_code(),
+            "name": airport.get_name(),
+            "city": airport.get_city(),
+            "country": airport.get_country(),
+            "time_zone": airport.get_time_zone(),
+            "is_hub": airport.get_isHub(),
+            "accommodation_cost": airport.get_accommodation_cost(),
+            "alimentation_cost": airport.get_alimentation_cost()
+        })
+
+        for route in airport.get_adjacencies():
+            route_data = route.to_dict()
+            route_data["origin"] = airport.get_IATA_code()
+            routes.append(route_data)
+
+    return {
+        "airports": airports,
+        "routes": routes
+    }
+
+
+def _dijkstra_response(start_iata: str, end_iata: str, criterion: str):
+    if not start_iata or not end_iata:
+        return jsonify({"error": "Both 'start' and 'end' query parameters are required."}), 400
+
+    if criterion not in ["cost", "time"]:
+        return jsonify({"error": "Criterion must be 'cost' or 'time'."}), 400
+
+    try:
+        if criterion == "cost":
+            result = _graph.dijkstra_by_cost(start_iata, end_iata)
+        else:
+            result = _graph.dijkstra_by_time(start_iata, end_iata)
+
+        return jsonify({
+            "success": True,
+            "start": start_iata,
+            "end": end_iata,
+            "criterion": criterion,
+            "result": result
+        }), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
 # ==================== Health Check Endpoint ====================
 
 @main_routes.route("/api/")
@@ -52,6 +104,12 @@ def api_root():
             "GET /api/journey/<journey_id>/log - Get journey history",
             "GET /api/journey/<journey_id>/report - Generate journey report",
             "GET /api/journey/<journey_id>/suggestions - Get route suggestions",
+            "GET /api/graph - Get full graph data (airports and routes)",
+            "GET /api/graph/visualization - Get graph rendered as PNG image",
+            "GET /api/graph/dijkstra/cost?start=<iata>&end=<iata> - Dijkstra shortest path by cost",
+            "GET /api/graph/dijkstra/time?start=<iata>&end=<iata> - Dijkstra shortest path by time",
+            "GET /api/graph/dijkstra/cost/visualization?start=<iata>&end=<iata> - Get Dijkstra graph image highlighted by cost",
+            "GET /api/graph/dijkstra/time/visualization?start=<iata>&end=<iata> - Get Dijkstra graph image highlighted by time",
             "POST /api/journey/<journey_id>/reset - Reset journey"
         ]
     }
@@ -68,6 +126,7 @@ def start_journey():
     {
         "origin": "GRU",
         "initial_budget": 500.0,
+        "initial_time_minutes": 1440,
         "traveler_name": "John Doe"
     }
 
@@ -90,6 +149,7 @@ def start_journey():
 
         origin = data.get("origin", "").upper()
         initial_budget = data.get("initial_budget", 0)
+        initial_time_minutes = data.get("initial_time_minutes", data.get("initial_time", 0))
         traveler_name = data.get("traveler_name", "Anonymous Traveler")
 
         if not origin:
@@ -98,9 +158,17 @@ def start_journey():
         if initial_budget <= 0:
             return jsonify({"error": "Initial budget must be positive"}), 400
 
+        if initial_time_minutes < 0:
+            return jsonify({"error": "Initial time must be zero or positive"}), 400
+
+        initial_time_hours = initial_time_minutes / 60.0
+
         # Start journey
         success, travel_state, message = _journey_simulator.start_journey(
-            origin, initial_budget, traveler_name
+            origin,
+            initial_budget,
+            traveler_name,
+            initial_time_hours
         )
 
         if not success:
@@ -123,6 +191,7 @@ def start_journey():
             "message": message,
             "traveler": traveler_name,
             "initial_budget": initial_budget,
+            "initial_time_minutes": initial_time_minutes,
             "origin": origin,
             "current_state": options
         }), 201
@@ -371,6 +440,125 @@ def get_route_suggestions(journey_id: str):
             ]
         }), 200
 
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+
+@main_routes.route("/api/graph", methods=["GET"])
+def get_graph():
+    """Return the full graph data for airports and routes."""
+    _initialize_services()
+
+    try:
+        graph_data = _serialize_graph()
+        return jsonify({
+            "success": True,
+            "airports": graph_data["airports"],
+            "routes": graph_data["routes"]
+        }), 200
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+
+@main_routes.route("/api/graph/dijkstra/cost", methods=["GET"])
+def get_graph_dijkstra_cost():
+    """Return the shortest path by cost between two airports."""
+    _initialize_services()
+
+    start_iata = request.args.get("start", "").upper()
+    end_iata = request.args.get("end", "").upper()
+    return _dijkstra_response(start_iata, end_iata, "cost")
+
+
+@main_routes.route("/api/graph/dijkstra/time", methods=["GET"])
+def get_graph_dijkstra_time():
+    """Return the shortest path by time between two airports."""
+    _initialize_services()
+
+    start_iata = request.args.get("start", "").upper()
+    end_iata = request.args.get("end", "").upper()
+    return _dijkstra_response(start_iata, end_iata, "time")
+
+
+@main_routes.route("/api/graph/dijkstra/cost/visualization", methods=["GET"])
+def get_graph_dijkstra_cost_visualization():
+    """Return the rendered Dijkstra graph image highlighted by cost."""
+    _initialize_services()
+
+    start_iata = request.args.get("start", "").upper()
+    end_iata = request.args.get("end", "").upper()
+
+    if not start_iata or not end_iata:
+        return jsonify({"error": "Both 'start' and 'end' query parameters are required."}), 400
+
+    try:
+        result = _graph.dijkstra(start_iata, end_iata, "cost")
+        highlight_path = result.get("path", [])
+        image_bytes = _graph.visualize_to_png(highlight_path, criterion="cost")
+        return send_file(
+            BytesIO(image_bytes),
+            mimetype="image/png",
+            as_attachment=False,
+            download_name="graph_dijkstra_cost.png"
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+
+@main_routes.route("/api/graph/dijkstra/time/visualization", methods=["GET"])
+def get_graph_dijkstra_time_visualization():
+    """Return the rendered Dijkstra graph image highlighted by time."""
+    _initialize_services()
+
+    start_iata = request.args.get("start", "").upper()
+    end_iata = request.args.get("end", "").upper()
+
+    if not start_iata or not end_iata:
+        return jsonify({"error": "Both 'start' and 'end' query parameters are required."}), 400
+
+    try:
+        result = _graph.dijkstra(start_iata, end_iata, "time")
+        highlight_path = result.get("path", [])
+        image_bytes = _graph.visualize_to_png(highlight_path, criterion="time")
+        return send_file(
+            BytesIO(image_bytes),
+            mimetype="image/png",
+            as_attachment=False,
+            download_name="graph_dijkstra_time.png"
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+
+@main_routes.route("/api/graph/visualization", methods=["GET"])
+def get_graph_visualization():
+    """Return the rendered graph as a PNG image."""
+    _initialize_services()
+
+    start_iata = request.args.get("start", "").upper()
+    end_iata = request.args.get("end", "").upper()
+    criterion = request.args.get("criterion", "").lower()
+    highlight_path = None
+
+    if start_iata and end_iata and criterion in ["cost", "time"]:
+        try:
+            result = _graph.dijkstra(start_iata, end_iata, criterion)
+            highlight_path = result.get("path", [])
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+    try:
+        image_bytes = _graph.visualize_to_png(highlight_path, criterion=criterion or "cost")
+        return send_file(
+            BytesIO(image_bytes),
+            mimetype="image/png",
+            as_attachment=False,
+            download_name="graph.png"
+        )
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
 
