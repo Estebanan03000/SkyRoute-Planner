@@ -1,4 +1,9 @@
+"""Domain model for temporary jobs available to travelers."""
+
+
 class Job:
+    """Represents an income-generating job opportunity at an airport."""
+
     def __init__(self, name: str, hourly_rate: float, max_hours: int) -> None:
         self._name = name
         self._hourly_rate = hourly_rate

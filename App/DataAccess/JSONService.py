@@ -1,3 +1,10 @@
+"""JSON loader for SkyRoute.
+
+This module provides a service to load airports, routes, aircraft,
+activities, and jobs from a JSON configuration file and convert them into
+in-memory graph models for the planner.
+"""
+
 import json
 import os
 from App.Models.Graph import Graph
@@ -9,6 +16,7 @@ from App.Models.Job import Job
 
 
 class JSONService:
+    """Service that loads airport network information from JSON files."""
     DEFAULT_AIRCRAFT_CONFIG = {
         "Avion Comercial": {"costKm": 0.18, "timeKm": 0.7},
         "Avion Regional": {"costKm": 0.25, "timeKm": 1.1},
@@ -46,10 +54,12 @@ class JSONService:
         return self._global_config
 
     def _read_json_file(self) -> dict:
+        """Read and parse the JSON file at the configured path."""
         with open(self._file_path, "r", encoding="utf-8") as file:
             return json.load(file)
 
     def _build_aircraft_config(self, data: dict) -> dict:
+        """Build a normalized aircraft configuration dictionary from JSON data."""
         aircraft_config = {}
 
         custom_config = data.get("configuracionGlobal", {}).get("aeronaves", {})
@@ -63,6 +73,7 @@ class JSONService:
         return aircraft_config
 
     def _load_airports(self, data: dict) -> dict:
+        """Create Airport objects from JSON airport definitions."""
         airports_map = {}
 
         for airport_data in data.get("airports", []):
@@ -87,6 +98,7 @@ class JSONService:
         return airports_map
 
     def _load_activities(self, airport_data: dict) -> list[Activity]:
+        """Load activity definitions for an airport from JSON."""
         activities = []
 
         for activity_data in airport_data.get("actividades", []):
@@ -102,6 +114,7 @@ class JSONService:
         return activities
 
     def _load_jobs(self, airport_data: dict) -> list[Job]:
+        """Load job opportunities for an airport from JSON."""
         jobs = []
 
         for job_data in airport_data.get("trabajos", []):
@@ -121,6 +134,7 @@ class JSONService:
         airports_map: dict,
         aircraft_config: dict
     ) -> None:
+        """Create Route objects and attach them to origin airports."""
         for route_data in data.get("routes", []):
             origin_code = route_data.get("origen")
             destination_code = route_data.get("destino")
@@ -152,6 +166,7 @@ class JSONService:
         route_data: dict,
         aircraft_config: dict
     ) -> list[Aircraft]:
+        """Load the aircraft list for a route using configuration values."""
         aircraft_list = []
 
         for index, aircraft_name in enumerate(route_data.get("aeronaves", [])):

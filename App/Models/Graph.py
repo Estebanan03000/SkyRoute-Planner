@@ -1,3 +1,5 @@
+"""Graph algorithms and visualization utilities for the SkyRoute planner."""
+
 import io
 import math
 import networkx as nx
@@ -14,6 +16,7 @@ from App.Models.Stack import Stack
 
 
 class Graph:
+    """Represents the airport network and implements traversal and optimization algorithms."""
     def __init__(self) -> None:
         self._airports: List[Airport] = []
 

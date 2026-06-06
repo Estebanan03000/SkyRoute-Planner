@@ -1,3 +1,5 @@
+"""Domain model for airports in the SkyRoute planner."""
+
 from __future__ import annotations
 
 from App.Models.Activity import Activity
@@ -8,7 +10,9 @@ from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from App.Models.Route import Route
 
+
 class Airport:
+    """Represents an airport node in the travel graph."""
     def __init__(self, IATA_code: str, name: str, city: str, country: str, time_zone: str, isHub: bool, accommodation_cost: float, alimentation_cost: float, airlines: Optional[List[Airline]] = None, activities: Optional[List[Activity]] = None, jobs: Optional[List[Job]] = None) -> None:
         self._IATA_code = IATA_code
         self._name = name
