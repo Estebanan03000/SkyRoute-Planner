@@ -4,13 +4,13 @@
         return response.json();
     },
 
-    startJourney: async ({ origin, initial_budget, initial_time_minutes, traveler_name }) => {
+    startJourney: async ({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name }) => {
         const response = await fetch('/api/journey/start', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ origin, initial_budget, initial_time_minutes, traveler_name })
+            body: JSON.stringify({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name })
         });
         return response.json();
     },
@@ -93,6 +93,16 @@
         return response.json();
     },
 
+    getGraphPath: async (start, end, criterion = 'cost') => {
+        const params = new URLSearchParams();
+        params.append('start', start);
+        params.append('end', end);
+        params.append('criterion', criterion);
+
+        const response = await fetch(`/api/graph/path?${params.toString()}`);
+        return response.json();
+    },
+
     resetJourney: async (journeyId) => {
         const response = await fetch(`/api/journey/${journeyId}/reset`, {
             method: 'POST'
@@ -117,6 +127,7 @@ const jobIdInput = document.getElementById('jobId');
 const jobHoursInput = document.getElementById('jobHours');
 const activityIdInput = document.getElementById('activityId');
 const initialTimeInput = document.getElementById('initialTime');
+const finalDestinationInput = document.getElementById('finalDestination');
 const statePanel = document.getElementById('statePanel');
 const logPanel = document.getElementById('logPanel');
 const reportPanel = document.getElementById('reportPanel');
@@ -133,9 +144,21 @@ const graphContainer = document.getElementById('graph-container');
 const graphImage = document.getElementById('graphImage');
 const graphStartInput = document.getElementById('graphStart');
 const graphEndInput = document.getElementById('graphEnd');
+const routeCriterionSelect = document.getElementById('routeCriterion');
+const calculateRoutePlanButton = document.getElementById('calculateRoutePlan');
+const routePlannerPanel = document.getElementById('routePlannerPanel');
+const routePlannerContent = document.getElementById('routePlannerContent');
 const showGraphButton = document.getElementById('showGraph');
+const toggleGraphSummaryButton = document.getElementById('toggleGraphSummary');
+const graphSummaryContainer = document.getElementById('graphSummaryContainer');
 const runDijkstraCostButton = document.getElementById('runDijkstraCost');
 const runDijkstraTimeButton = document.getElementById('runDijkstraTime');
+const journeySuggestionsPanel = document.getElementById('suggestionsPanel');
+const journeySuggestionsContent = document.getElementById('suggestionsContent');
+const floatingStatus = document.getElementById('floatingStatus');
+const floatingAirport = document.getElementById('floatingAirport');
+const floatingBudget = document.getElementById('floatingBudget');
+const floatingTime = document.getElementById('floatingTime');
 
 function showToast(message, type = 'info', duration = 4500) {
     const toast = document.createElement('div');
@@ -171,12 +194,32 @@ function showError(error) {
 }
 
 function hideAllDetailPanels() {
-    [statePanel, logPanel, reportPanel, suggestionsPanel, graphPanel, dijkstraPanel].forEach(panel => panel.hidden = true);
+    [statePanel, logPanel, reportPanel, suggestionsPanel, graphPanel, dijkstraPanel, routePlannerPanel, journeySuggestionsPanel].forEach(panel => panel.hidden = true);
 }
 
 function showPanel(panel) {
     hideAllDetailPanels();
     panel.hidden = false;
+}
+
+function showPanels(panels) {
+    hideAllDetailPanels();
+    panels.forEach(panel => {
+        if (panel) {
+            panel.hidden = false;
+        }
+    });
+}
+
+function setGraphSummaryVisibility(visible) {
+    if (!graphSummaryContainer || !toggleGraphSummaryButton) return;
+    graphSummaryContainer.hidden = !visible;
+    toggleGraphSummaryButton.textContent = visible ? 'Ocultar resumen del grafo' : 'Mostrar resumen del grafo';
+}
+
+function toggleGraphSummary() {
+    if (!graphSummaryContainer) return;
+    setGraphSummaryVisibility(graphSummaryContainer.hidden);
 }
 
 function renderJsonContent(container, data) {
@@ -188,12 +231,48 @@ function formatValue(value) {
         return 'N/A';
     }
     if (Array.isArray(value)) {
-        return value.length ? value.join(', ') : 'Ninguno';
+        if (!value.length) {
+            return 'Ninguno';
+        }
+        return value
+            .map(item => {
+                if (item === null || item === undefined) {
+                    return 'N/A';
+                }
+                if (typeof item === 'object') {
+                    return formatObjectSummary(item);
+                }
+                return String(item);
+            })
+            .join(', ');
     }
     if (typeof value === 'object') {
-        return JSON.stringify(value, null, 2);
+        return formatObjectSummary(value);
     }
     return String(value);
+}
+
+function formatObjectSummary(obj) {
+    if (!obj || typeof obj !== 'object') {
+        return String(obj);
+    }
+
+    if ('type' in obj && 'name' in obj) {
+        return `${obj.type} - ${obj.name}`;
+    }
+    if ('type' in obj && 'id' in obj) {
+        return `${obj.type} (${obj.id})`;
+    }
+    if ('name' in obj) {
+        return `${obj.name}`;
+    }
+    if ('id' in obj) {
+        return `${obj.id}`;
+    }
+    if ('destination' in obj && 'origin' in obj) {
+        return `${obj.origin} → ${obj.destination}`;
+    }
+    return JSON.stringify(obj, null, 2);
 }
 
 function renderKeyValueRow(label, value) {
@@ -205,7 +284,7 @@ function renderObjectList(items) {
         return '<div class="object-item">Ninguno</div>';
     }
     return items.map(item => {
-        if (typeof item === 'object') {
+        if (typeof item === 'object' && item !== null) {
             const fields = Object.entries(item)
                 .map(([key, value]) => `<div><strong>${key.replace(/_/g, ' ')}:</strong> ${formatValue(value)}</div>`)
                 .join('');
@@ -213,6 +292,47 @@ function renderObjectList(items) {
         }
         return `<div class="object-item">${formatValue(item)}</div>`;
     }).join('');
+}
+
+function renderTableRow(label, items) {
+    if (!items || !items.length) {
+        return `<div class="option-group"><h4>${label}</h4><div class="object-item">Ninguno</div></div>`;
+    }
+
+    const rows = Array.isArray(items) ? items : [items];
+    const objectRows = rows.filter(item => typeof item === 'object' && item !== null);
+
+    if (!objectRows.length) {
+        return renderArrayRow(label, rows);
+    }
+
+    const headers = Array.from(new Set(objectRows.flatMap(item => Object.keys(item))));
+    const headerCells = headers.map(header => `<th>${header.replace(/_/g, ' ')}</th>`).join('');
+
+    const bodyRows = rows.map(item => {
+        if (typeof item !== 'object' || item === null) {
+            return `<tr><td colspan="${headers.length}">${formatValue(item)}</td></tr>`;
+        }
+
+        const cells = headers.map(key => `<td>${formatValue(item[key])}</td>`).join('');
+        return `<tr>${cells}</tr>`;
+    }).join('');
+
+    return `
+        <div class="option-group">
+            <h4>${label}</h4>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>${headerCells}</tr>
+                    </thead>
+                    <tbody>
+                        ${bodyRows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
 }
 
 function renderArrayRow(label, items) {
@@ -270,23 +390,32 @@ function renderStateContent(data) {
         html += renderKeyValueRow('Destinos visitados', state.journey_progress.destinations_count);
         html += renderKeyValueRow('Decisiones tomadas', state.journey_progress.decisions_made);
         html += renderKeyValueRow('Eventos registrados', state.journey_progress.events_recorded);
+        if (Array.isArray(state.journey_progress.destinations_visited)) {
+            html += renderKeyValueRow('Ruta actual', state.journey_progress.destinations_visited.join(' → '));
+        }
+        html += '</div>';
+    }
+
+    if (state.final_destination) {
+        html += '<div class="option-group"><h4>Destino final</h4>';
+        html += renderKeyValueRow('Final', state.final_destination);
         html += '</div>';
     }
 
     if (state.mandatory_requirements) {
-        html += renderArrayRow('Costos obligatorios', Array.isArray(state.mandatory_requirements) ? state.mandatory_requirements : [state.mandatory_requirements]);
+        html += renderTableRow('Costos obligatorios', Array.isArray(state.mandatory_requirements) ? state.mandatory_requirements : [state.mandatory_requirements]);
     }
     if (state.optional_activities) {
-        html += renderArrayRow('Actividades disponibles', state.optional_activities);
+        html += renderTableRow('Actividades disponibles', state.optional_activities);
     }
     if (state.available_jobs) {
-        html += renderArrayRow('Trabajos disponibles', state.available_jobs);
+        html += renderTableRow('Trabajos disponibles', state.available_jobs);
     }
     if (state.budget && state.budget.budget_critical && !state.available_jobs?.length) {
         html += '<div class="option-group"><h4>Trabajos disponibles</h4><div class="object-item">No hay trabajos disponibles en este aeropuerto actualmente.</div></div>';
     }
     if (state.next_flights) {
-        html += renderArrayRow('Vuelos disponibles', state.next_flights);
+        html += renderTableRow('Vuelos disponibles', state.next_flights);
     }
 
     stateContent.innerHTML = html || `<pre>${JSON.stringify(state, null, 2)}</pre>`;
@@ -382,6 +511,129 @@ function renderSuggestionsContent(data) {
     suggestionsContent.innerHTML = html;
 }
 
+function renderJourneyFlightSuggestions(state) {
+    updateFloatingStatus(state);
+    if (!state || !Array.isArray(state.next_flights)) {
+        journeySuggestionsContent.innerHTML = '<div class="object-item">No hay sugerencias de vuelos disponibles.</div>';
+        return;
+    }
+
+    let html = `<div class="option-group"><h4>Aeropuerto actual</h4>`;
+    html += renderKeyValueRow('Aeropuerto', state.current_airport?.code || state.current_airport || 'N/A');
+    html += renderKeyValueRow('Presupuesto restante', state.budget?.current ?? 'N/A');
+    if (state.final_destination) {
+        html += renderKeyValueRow('Destino final', state.final_destination);
+    }
+    if (Array.isArray(state.journey_progress?.destinations_visited)) {
+        html += renderKeyValueRow('Ruta actual', state.journey_progress.destinations_visited.join(' → '));
+    }
+    html += '</div>';
+
+    html += '<div class="option-group"><h4>Vuelos conectados disponibles</h4>';
+    state.next_flights.forEach((flight, index) => {
+        html += '<div class="object-item">';
+        html += `<div><strong>${flight.destination}</strong> — ${flight.destination_name}</div>`;
+        html += `<div>${flight.city}, ${flight.country}</div>`;
+        html += `<div>Distancia: ${flight.distance_km} km</div>`;
+        html += `<div>Estadía mínima: ${flight.minimum_stay_hours} h</div>`;
+        html += `<div>Subsidizado: ${flight.is_subsidized ? 'Sí' : 'No'}</div>`;
+
+        if (Array.isArray(flight.aircraft_options) && flight.aircraft_options.length) {
+            html += '<div class="table-wrapper"><table class="data-table"><thead><tr>' +
+                '<th>Aeronave</th><th>Costo</th><th>Tiempo (hrs)</th><th>Seleccionar</th>' +
+                '</tr></thead><tbody>';
+
+            flight.aircraft_options.forEach((option) => {
+                html += '<tr>' +
+                    `<td>${formatValue({ type: option.type, id: option.id })}</td>` +
+                    `<td>${option.cost}</td>` +
+                    `<td>${option.time_hours}</td>` +
+                    `<td><button class="flight-select-button" data-destination="${flight.destination}" data-aircraft-id="${option.id}">Seleccionar</button></td>` +
+                    '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+        } else {
+            html += '<div>No hay aeronaves disponibles para este destino.</div>';
+        }
+
+        html += '</div>';
+    });
+    html += '</div>';
+
+    journeySuggestionsContent.innerHTML = html;
+    document.querySelectorAll('.flight-select-button').forEach(button => {
+        button.addEventListener('click', async () => {
+            const journeyId = journeyIdInput.value.trim();
+            const destination = button.dataset.destination;
+            const aircraftId = button.dataset.aircraftId;
+            if (!journeyId) {
+                showResponse({ error: 'Se requiere el Journey ID para seleccionar un vuelo.' });
+                return;
+            }
+            await selectFlightOption(journeyId, destination, aircraftId);
+        });
+    });
+}
+
+async function selectFlightOption(journeyId, destination, aircraftId) {
+    responseEl.textContent = `Seleccionando vuelo a ${destination}...`;
+    hideAllDetailPanels();
+
+    try {
+        const decisionData = {
+            type: 'FLIGHT',
+            destination,
+            aircraft_id: aircraftId
+        };
+        const data = await API.executeDecision(journeyId, decisionData);
+        showResponse(data, data.success ? `Vuelo seleccionado a ${destination}` : 'No se pudo seleccionar el vuelo');
+
+        if (data.success) {
+            renderStateContent(data.new_state);
+            renderJourneyFlightSuggestions(data.new_state);
+            populateJobSelect(data.new_state?.available_jobs || []);
+            populateActivitySelect(data.new_state?.optional_activities || []);
+            showPanels([statePanel, journeySuggestionsPanel]);
+        }
+    } catch (error) {
+        showError(error);
+    }
+}
+
+function updateFloatingStatus(state) {
+    if (!floatingStatus || !state) {
+        return;
+    }
+
+    const airportName = state.current_airport?.name || state.current_airport?.code || 'N/A';
+    const destinationName = state.final_destination || 'N/A';
+    const budgetValue = state.budget?.current != null ? `$${state.budget.current}` : 'N/A';
+    const timeRemaining = state.time?.remaining_time_minutes != null
+        ? `${state.time.remaining_time_minutes} min`
+        : state.time?.remaining_time_hours != null
+            ? `${state.time.remaining_time_hours} h`
+            : 'N/A';
+
+    floatingAirport.textContent = airportName;
+    document.getElementById('floatingDestination').textContent = destinationName;
+    floatingBudget.textContent = budgetValue;
+    floatingTime.textContent = timeRemaining;
+
+    floatingStatus.hidden = false;
+}
+
+function resetFloatingStatus() {
+    if (!floatingStatus) {
+        return;
+    }
+
+    floatingAirport.textContent = 'N/A';
+    floatingBudget.textContent = 'N/A';
+    floatingTime.textContent = 'N/A';
+    floatingStatus.hidden = true;
+}
+
 function renderGraphContent(data) {
     let html = '';
     if (Array.isArray(data.airports)) {
@@ -395,6 +647,10 @@ function renderGraphContent(data) {
         return;
     }
     graphContent.innerHTML = html;
+    if (toggleGraphSummaryButton) {
+        toggleGraphSummaryButton.hidden = false;
+    }
+    setGraphSummaryVisibility(false);
     if (graphContainer) {
         graphContainer.innerHTML = '';
         if (graphImage) {
@@ -487,11 +743,93 @@ function renderDijkstraContent(data) {
 
     if (Array.isArray(data.result.segments) && data.result.segments.length) {
         html += '<div class="option-group"><h4>Segmentos</h4>';
-        html += renderObjectList(data.result.segments);
+        html += renderTableRow('Segmentos', data.result.segments);
         html += '</div>';
     }
 
     dijkstraContent.innerHTML = html;
+}
+
+function renderAirportsPathTable(airports) {
+    if (!Array.isArray(airports) || airports.length === 0) {
+        return '<div class="object-item">No hay aeropuertos en la ruta.</div>';
+    }
+
+    const headers = [
+        'iata', 'name', 'city', 'country', 'is_hub',
+        'accommodation_cost', 'alimentation_cost', 'activities', 'jobs'
+    ];
+
+    const headerCells = headers.map(header => `<th>${header.replace(/_/g, ' ')}</th>`).join('');
+
+    const rowsHtml = airports.map((airport) => {
+        const rowCells = headers.map(key => {
+            const value = airport[key];
+            if (key === 'activities') {
+                return `<td>${Array.isArray(value) ? value.length : 0}</td>`;
+            }
+            if (key === 'jobs') {
+                return `<td>${Array.isArray(value) ? value.length : 0}</td>`;
+            }
+            return `<td>${formatValue(value)}</td>`;
+        }).join('');
+
+        return `
+            <tr class="clickable-row" data-iata="${airport.iata}">
+                ${rowCells}
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div class="option-group">
+            <h4>Aeropuertos en la ruta</h4>
+            <div class="table-wrapper">
+                <table class="data-table route-table">
+                    <thead>
+                        <tr>${headerCells}</tr>
+                    </thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+            </div>
+            <p class="hint-text">Haz clic en un aeropuerto para copiarlo al campo de destino y elegirlo como siguiente vértice.</p>
+        </div>
+    `;
+}
+
+function renderRoutePlannerContent(data) {
+    if (!data || !data.success) {
+        renderJsonContent(routePlannerContent, data);
+        return;
+    }
+
+    let html = '<div class="option-group"><h4>Resumen de la ruta</h4>';
+    html += renderKeyValueRow('Origen', data.start);
+    html += renderKeyValueRow('Destino', data.end);
+    html += renderKeyValueRow('Criterio', data.criterion);
+    html += renderKeyValueRow('Ruta', data.route.path.join(' → ') || 'N/A');
+    html += renderKeyValueRow('Número de saltos', data.route.segments?.length || 0);
+    html += renderKeyValueRow('Costo total', data.route.totalWeight ?? 'N/A');
+    html += '</div>';
+
+    if (Array.isArray(data.route.segments) && data.route.segments.length) {
+        html += '<div class="option-group"><h4>Segmentos</h4>';
+        html += renderTableRow('Segmentos', data.route.segments);
+        html += '</div>';
+    }
+
+    html += renderAirportsPathTable(data.airports);
+    routePlannerContent.innerHTML = html;
+
+    document.querySelectorAll('.clickable-row').forEach((row) => {
+        row.addEventListener('click', () => {
+            const selectedIata = row.dataset.iata;
+            if (selectedIata && graphEndInput) {
+                graphEndInput.value = selectedIata;
+                showToast(`Destino seleccionado: ${selectedIata}`, 'info');
+            }
+        });
+    });
 }
 
 function updateDecisionFields() {
@@ -504,6 +842,9 @@ function updateDecisionFields() {
 updateDecisionFields();
 
 decisionTypeSelect.addEventListener('change', updateDecisionFields);
+if (toggleGraphSummaryButton) {
+    toggleGraphSummaryButton.addEventListener('click', toggleGraphSummary);
+}
 
 function getJourneyIdOrNotify() {
     const journeyId = journeyIdInput.value.trim();
@@ -556,6 +897,7 @@ function buildDecisionPayload() {
 
 startButton.addEventListener('click', async () => {
     const origin = document.getElementById('origin').value.trim() || 'GRU';
+    const final_destination = finalDestinationInput?.value.trim() || 'GIG';
     const initial_budget = Number(document.getElementById('budget').value) || 500;
     const initial_time_minutes = Number(initialTimeInput?.value || 0) || 0;
     const traveler_name = document.getElementById('traveler').value.trim() || 'Anonimo';
@@ -564,15 +906,16 @@ startButton.addEventListener('click', async () => {
     hideAllDetailPanels();
 
     try {
-        const data = await API.startJourney({ origin, initial_budget, initial_time_minutes, traveler_name });
+        const data = await API.startJourney({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name });
         showResponse(data, data.success ? `Viaje iniciado: ${data.journey_id}` : 'No se pudo iniciar el viaje');
 
         if (data.success && data.journey_id) {
             journeyIdInput.value = data.journey_id;
-            renderStateContent(data);
+            renderStateContent(data.current_state);
+            renderJourneyFlightSuggestions(data.current_state);
             populateJobSelect(data.current_state?.available_jobs || []);
             populateActivitySelect(data.current_state?.optional_activities || []);
-            showPanel(statePanel);
+            showPanels([statePanel, journeySuggestionsPanel]);
         }
     } catch (error) {
         showError(error);
@@ -588,10 +931,11 @@ getStateButton.addEventListener('click', async () => {
     try {
         const data = await API.getJourneyState(journeyId);
         showResponse(data, 'Estado obtenido');
-        renderStateContent(data);
+        renderStateContent(data.current_state);
+        renderJourneyFlightSuggestions(data.current_state);
         populateJobSelect(data.current_state?.available_jobs || []);
         populateActivitySelect(data.current_state?.optional_activities || []);
-        showPanel(statePanel);
+        showPanels([statePanel, journeySuggestionsPanel]);
     } catch (error) {
         showError(error);
     }
@@ -713,6 +1057,26 @@ runDijkstraTimeButton.addEventListener('click', async () => {
     }
 });
 
+calculateRoutePlanButton.addEventListener('click', async () => {
+    const start = graphStartInput.value.trim();
+    const end = graphEndInput.value.trim();
+    const criterion = routeCriterionSelect.value;
+
+    if (!start || !end) return showResponse({ error: 'Origen y destino son requeridos para planificar la ruta.' });
+
+    responseEl.textContent = 'Calculando ruta recomendada...';
+    hideAllDetailPanels();
+
+    try {
+        const data = await API.getGraphPath(start, end, criterion);
+        showResponse(data, 'Ruta recomendada calculada');
+        renderRoutePlannerContent(data);
+        showPanel(routePlannerPanel);
+    } catch (error) {
+        showError(error);
+    }
+});
+
 resetButton.addEventListener('click', async () => {
     const journeyId = getJourneyIdOrNotify();
     if (!journeyId) return;
@@ -723,6 +1087,7 @@ resetButton.addEventListener('click', async () => {
     try {
         const data = await API.resetJourney(journeyId);
         showResponse(data, 'Viaje reseteado');
+        resetFloatingStatus();
     } catch (error) {
         showError(error);
     }

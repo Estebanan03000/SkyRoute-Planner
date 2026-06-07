@@ -8,6 +8,12 @@
     <script type="module" src="{{ url_for('static', filename='JavaScript/controllerUI.js') }}"></script>
 </head>
 <body>
+    <div id="floatingStatus" class="floating-status" hidden>
+        <div><strong>Aeropuerto:</strong> <span id="floatingAirport">N/A</span></div>
+        <div><strong>Destino final:</strong> <span id="floatingDestination">N/A</span></div>
+        <div><strong>Presupuesto:</strong> <span id="floatingBudget">N/A</span></div>
+        <div><strong>Tiempo restante:</strong> <span id="floatingTime">N/A</span></div>
+    </div>
     <main>
         <h1>SkyRoute Planner</h1>
 
@@ -34,10 +40,30 @@
             <button id="runDijkstraTime">Dijkstra por tiempo</button>
         </section>
 
+        <section>
+            <h2>Planificador de ruta</h2>
+            <div>
+                <label for="routeCriterion">Criterio:</label>
+                <select id="routeCriterion">
+                    <option value="cost" selected>Costo</option>
+                    <option value="time">Tiempo</option>
+                    <option value="distance">Distancia</option>
+                </select>
+            </div>
+            <button id="calculateRoutePlan">Calcular ruta recomendada</button>
+            <div id="routePlannerPanel" class="detail-panel" hidden>
+                <h3>Ruta recomendada</h3>
+                <div id="routePlannerContent" class="detail-content"></div>
+            </div>
+        </section>
+
         <section id="graphDetailsSection">
             <div id="graphPanel" class="detail-panel" hidden>
                 <h3>Grafo</h3>
-                <div id="graphContent" class="detail-content"></div>
+                <button id="toggleGraphSummary" type="button" class="toggle-button" hidden>Mostrar resumen del grafo</button>
+                <div id="graphSummaryContainer" hidden>
+                    <div id="graphContent" class="detail-content"></div>
+                </div>
             </div>
             <div id="dijkstraPanel" class="detail-panel" hidden>
                 <h3>Resultado Dijkstra</h3>
@@ -50,6 +76,10 @@
             <div>
                 <label for="origin">Origen:</label>
                 <input id="origin" type="text" value="GRU">
+            </div>
+            <div>
+                <label for="finalDestination">Destino final:</label>
+                <input id="finalDestination" type="text" value="GIG">
             </div>
             <div>
                 <label for="budget">Presupuesto:</label>
@@ -122,21 +152,25 @@
 
         <section id="detailsSection">
             <h2>Información del viaje</h2>
-            <div id="statePanel" class="detail-panel" hidden>
-                <h3>Estado actual</h3>
-                <div id="stateContent" class="detail-content"></div>
+            <div class="panel-row">
+                <div id="suggestionsPanel" class="detail-panel" hidden>
+                    <h3>Sugerencias de ruta</h3>
+                    <div id="suggestionsContent" class="detail-content"></div>
+                </div>
+                <div id="statePanel" class="detail-panel" hidden>
+                    <h3>Estado actual</h3>
+                    <div id="stateContent" class="detail-content"></div>
+                </div>
             </div>
-            <div id="logPanel" class="detail-panel" hidden>
-                <h3>Historial de viaje</h3>
-                <div id="logContent" class="detail-content"></div>
-            </div>
-            <div id="reportPanel" class="detail-panel" hidden>
-                <h3>Reporte del viaje</h3>
-                <div id="reportContent" class="detail-content"></div>
-            </div>
-            <div id="suggestionsPanel" class="detail-panel" hidden>
-                <h3>Sugerencias de ruta</h3>
-                <div id="suggestionsContent" class="detail-content"></div>
+            <div class="panel-row">
+                <div id="logPanel" class="detail-panel" hidden>
+                    <h3>Historial de viaje</h3>
+                    <div id="logContent" class="detail-content"></div>
+                </div>
+                <div id="reportPanel" class="detail-panel" hidden>
+                    <h3>Reporte del viaje</h3>
+                    <div id="reportContent" class="detail-content"></div>
+                </div>
             </div>
         </section>
 
