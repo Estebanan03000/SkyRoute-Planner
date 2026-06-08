@@ -221,6 +221,13 @@ const dijkstraResult =
         'dijkstraResult'
     );
 
+const aircraftInput =
+    document.getElementById(
+        'aircraft'
+    );
+
+let currentFlights = [];
+
 function getPerformanceColor(
     rating
 ) {
@@ -295,6 +302,16 @@ function renderAvailableOptions(state) {
 
     destinationSelect.innerHTML =
         '<option value="">Seleccione un destino</option>';
+
+    aircraftInput.innerHTML =
+        `
+        <option value="">
+            Seleccione una aeronave
+        </option>
+        `;
+
+    currentFlights =
+        state.next_flights;
 
     state.next_flights.forEach(flight => {
 
@@ -508,6 +525,54 @@ function renderAvailableOptions(state) {
     });
 
 }
+
+destinationInput.addEventListener(
+    'change',
+    () => {
+
+        aircraftInput.innerHTML =
+            `
+            <option value="">
+                Seleccione una aeronave
+            </option>
+            `;
+
+        const selectedFlight =
+            currentFlights.find(
+                flight =>
+                    flight.destination ===
+                    destinationInput.value
+            );
+
+        if (!selectedFlight) {
+            return;
+        }
+
+        selectedFlight.aircraft_options.forEach(
+            aircraft => {
+
+                const option =
+                    document.createElement(
+                        'option'
+                    );
+
+                option.value =
+                    aircraft.id;
+
+                option.textContent =
+                    `${aircraft.type}
+                    | $${aircraft.cost}
+                    | ${aircraft.time_hours}h`;
+
+                aircraftInput.appendChild(
+                    option
+                );
+
+            }
+        );
+
+    }
+);
 
 async function loadJourneyLog(journeyId) {
 
@@ -1097,6 +1162,8 @@ getStateButton.addEventListener(
 executeDecisionButton.addEventListener('click', async () => {
     const journeyId = journeyIdInput.value.trim();
     const destination = destinationInput.value;
+    const aircraft_id =
+        aircraftInput.value;
 
     if (!journeyId) {
         return showResponse({ error: 'Journey ID es requerido.' });
@@ -1109,7 +1176,8 @@ executeDecisionButton.addEventListener('click', async () => {
     try {
         const data = await API.executeDecision(journeyId, {
             type: 'FLIGHT',
-            destination
+            destination,
+            aircraft_id
         });
 
         showResponse(data);
