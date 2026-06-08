@@ -1,6 +1,12 @@
+"""Graph algorithms and visualization utilities for the SkyRoute planner."""
+
+import io
 import math
 import networkx as nx
+import matplotlib
 import matplotlib.pyplot as plt
+
+matplotlib.use('Agg')
 
 from typing import List, Optional
 from App.Models.Airport import Airport
@@ -10,6 +16,7 @@ from App.Models.Stack import Stack
 
 
 class Graph:
+    """Represents the airport network and implements traversal and optimization algorithms."""
     def __init__(self) -> None:
         self._airports: List[Airport] = []
 
@@ -298,3 +305,86 @@ class Graph:
 
         plt.title("Graph Visualization of Airports and Routes", fontsize=14)
         plt.show()
+
+    def visualize_to_png(self, highlight_path: Optional[List[str]] = None, criterion: str = "cost") -> bytes:
+        graph = nx.DiGraph()
+        route_weights: dict[tuple[str, str], float] = {}
+
+        for airport in self._airports:
+            graph.add_node(airport.get_IATA_code())
+            for route in airport.get_adjacencies():
+                origin = airport.get_IATA_code()
+                destination = route.get_destiny_airport().get_IATA_code()
+                graph.add_edge(origin, destination)
+                route_weights[(origin, destination)] = route.get_weight_by_criterion(
+                    criterion,
+                    None
+                )
+
+        positions = nx.spring_layout(graph, seed=42)
+        highlight_edges = set()
+
+        if highlight_path and len(highlight_path) > 1:
+            highlight_edges = {
+                (highlight_path[i], highlight_path[i + 1])
+                for i in range(len(highlight_path) - 1)
+            }
+
+        fig, ax = plt.subplots(figsize=(14, 10))
+        ax.set_axis_off()
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_frame_on(False)
+
+        for edge in graph.edges():
+            x1, y1 = positions[edge[0]]
+            x2, y2 = positions[edge[1]]
+            edge_color = "red" if edge in highlight_edges else "#888"
+            linewidth = 2.8 if edge in highlight_edges else 1.0
+            ax.plot([x1, x2], [y1, y2], color=edge_color, alpha=0.6, linewidth=linewidth, zorder=1)
+
+            midpoint_x = (x1 + x2) / 2
+            midpoint_y = (y1 + y2) / 2
+            weight = route_weights.get(edge, None)
+            if weight is not None and weight != math.inf:
+                ax.text(
+                    midpoint_x,
+                    midpoint_y,
+                    f"{weight:.1f}",
+                    fontsize=8,
+                    color="#334155",
+                    ha="center",
+                    va="center",
+                    bbox=dict(boxstyle="round,pad=0.18", fc=("#fde68a" if edge in highlight_edges else "#f8fafc"), ec="none", alpha=0.9),
+                    zorder=4
+                )
+
+        node_positions = [positions[node] for node in graph.nodes()]
+        ax.scatter(
+            [pos[0] for pos in node_positions],
+            [pos[1] for pos in node_positions],
+            s=760,
+            color="lightblue",
+            edgecolors="black",
+            linewidths=0.8,
+            zorder=2
+        )
+
+        for node, (x, y) in positions.items():
+            ax.text(
+                x,
+                y,
+                node,
+                fontsize=10,
+                fontweight="bold",
+                ha="center",
+                va="center",
+                zorder=3
+            )
+
+        fig.suptitle(f"Grafo de rutas ({criterion})", fontsize=16)
+        buffer = io.BytesIO()
+        fig.savefig(buffer, format="png", bbox_inches="tight")
+        plt.close(fig)
+        buffer.seek(0)
+        return buffer.getvalue()

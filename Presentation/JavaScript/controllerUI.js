@@ -4,13 +4,13 @@
         return response.json();
     },
 
-    startJourney: async ({ origin, initial_budget, traveler_name }) => {
+    startJourney: async ({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name }) => {
         const response = await fetch('/api/journey/start', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ origin, initial_budget, traveler_name })
+            body: JSON.stringify({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name })
         });
         return response.json();
     },
@@ -135,9 +135,45 @@ calculateDijkstra: async (
 const startButton = document.getElementById('startJourney');
 const getStateButton = document.getElementById('getState');
 const executeDecisionButton = document.getElementById('executeDecision');
-
+const decisionTypeSelect = document.getElementById('decisionType');
 const journeyIdInput = document.getElementById('journeyId');
 const destinationInput = document.getElementById('destination');
+const jobIdInput = document.getElementById('jobId');
+const jobHoursInput = document.getElementById('jobHours');
+const activityIdInput = document.getElementById('activityId');
+const initialTimeInput = document.getElementById('initialTime');
+const finalDestinationInput = document.getElementById('finalDestination');
+const statePanel = document.getElementById('statePanel');
+const logPanel = document.getElementById('logPanel');
+const reportPanel = document.getElementById('reportPanel');
+const suggestionsPanel = document.getElementById('suggestionsPanel');
+const graphPanel = document.getElementById('graphPanel');
+const dijkstraPanel = document.getElementById('dijkstraPanel');
+const stateContent = document.getElementById('stateContent');
+const logContent = document.getElementById('logContent');
+const reportContent = document.getElementById('reportContent');
+const suggestionsContent = document.getElementById('suggestionsContent');
+const graphContent = document.getElementById('graphContent');
+const dijkstraContent = document.getElementById('dijkstraContent');
+const graphContainer = document.getElementById('graph-container');
+const graphImage = document.getElementById('graphImage');
+const graphStartInput = document.getElementById('graphStart');
+const graphEndInput = document.getElementById('graphEnd');
+const routeCriterionSelect = document.getElementById('routeCriterion');
+const calculateRoutePlanButton = document.getElementById('calculateRoutePlan');
+const routePlannerPanel = document.getElementById('routePlannerPanel');
+const routePlannerContent = document.getElementById('routePlannerContent');
+const showGraphButton = document.getElementById('showGraph');
+const toggleGraphSummaryButton = document.getElementById('toggleGraphSummary');
+const graphSummaryContainer = document.getElementById('graphSummaryContainer');
+const runDijkstraCostButton = document.getElementById('runDijkstraCost');
+const runDijkstraTimeButton = document.getElementById('runDijkstraTime');
+const journeySuggestionsPanel = document.getElementById('suggestionsPanel');
+const journeySuggestionsContent = document.getElementById('suggestionsContent');
+const floatingStatus = document.getElementById('floatingStatus');
+const floatingAirport = document.getElementById('floatingAirport');
+const floatingBudget = document.getElementById('floatingBudget');
+const floatingTime = document.getElementById('floatingTime');
 
 const loadGraphButton = document.getElementById('loadGraph');
 const graphFileInput = document.getElementById('graphFile');
@@ -606,15 +642,22 @@ async function refreshGraph() {
 
 startButton.addEventListener('click', async () => {
     const origin = document.getElementById('origin').value.trim() || 'GRU';
+    const final_destination = finalDestinationInput?.value.trim() || 'GIG';
     const initial_budget = Number(document.getElementById('budget').value) || 500;
+    const initial_time_minutes = Number(initialTimeInput?.value || 0) || 0;
     const traveler_name = document.getElementById('traveler').value.trim() || 'Anonimo';
 
     try {
-        const data = await API.startJourney({ origin, initial_budget, traveler_name });
-        showResponse(data);
+        const data = await API.startJourney({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name });
+        showResponse(data, data.success ? `Viaje iniciado: ${data.journey_id}` : 'No se pudo iniciar el viaje');
 
         if (data.success && data.journey_id) {
             journeyIdInput.value = data.journey_id;
+            renderStateContent(data.current_state);
+            renderJourneyFlightSuggestions(data.current_state);
+            populateJobSelect(data.current_state?.available_jobs || []);
+            populateActivitySelect(data.current_state?.optional_activities || []);
+            showPanels([statePanel, journeySuggestionsPanel]);
         }
     } catch (error) {
         showError(error);
@@ -692,10 +735,8 @@ getStateButton.addEventListener(
 
 
 executeDecisionButton.addEventListener('click', async () => {
-    const journeyId = journeyIdInput.value.trim();
-    const destination = destinationInput.value.trim();
-    if (!journeyId) return showResponse({ error: 'Journey ID es requerido.' });
-    if (!destination) return showResponse({ error: 'Destino es requerido.' });
+    const journeyId = getJourneyIdOrNotify();
+    if (!journeyId) return;
 
     try {
 

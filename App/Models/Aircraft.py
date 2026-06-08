@@ -1,4 +1,9 @@
+"""Domain model for aircraft used in route cost and time calculations."""
+
+
 class Aircraft:
+    """Represents an aircraft option for a flight route."""
+
     def __init__(self, id: str, type: str, cost_per_km: float, time_per_km: int) -> None:
         self._id = id
         self._type = type

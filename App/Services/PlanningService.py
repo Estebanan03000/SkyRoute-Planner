@@ -709,7 +709,12 @@ class PlanningService:
                 "report": {}
             }
 
-        travel_state = TravelState(origin_airport, initial_budget, "Simulation Traveler")
+        travel_state = TravelState(
+            origin_airport,
+            initial_budget,
+            "Simulation Traveler",
+            available_hours
+        )
 
         route_result = self._graph.dijkstra(
             origin_iata,

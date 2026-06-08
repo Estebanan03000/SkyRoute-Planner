@@ -71,7 +71,8 @@ class InteractiveJourneySimulator:
         self,
         origin_airport_code: str,
         initial_budget: float,
-        traveler_name: str
+        traveler_name: str,
+        initial_time_hours: float = 0.0
     ) -> Tuple[bool, TravelState, str]:
         """
         Initialize a new interactive journey.
@@ -94,7 +95,12 @@ class InteractiveJourneySimulator:
             return False, None, "Initial budget must be positive"
 
         # Create initial travel state
-        travel_state = TravelState(origin_airport, initial_budget, traveler_name)
+        travel_state = TravelState(
+            origin_airport,
+            initial_budget,
+            traveler_name,
+            initial_time_hours
+        )
 
         # Record starting event
         travel_state.add_event(
@@ -182,14 +188,26 @@ class InteractiveJourneySimulator:
                 "budget_critical": current_state.get_budget_remaining_percentage() < 35
             },
             "time": {
+                "initial_time_hours": round(current_state.get_initial_time_hours(), 2),
+                "initial_time_minutes": round(current_state.get_initial_time_hours() * 60, 0),
+                "remaining_time_hours": round(current_state.get_remaining_time_hours(), 2),
+                "remaining_time_minutes": round(current_state.get_remaining_time_hours() * 60, 0),
                 "at_current_airport_hours": round(current_state.get_time_at_current_airport(), 2),
+                "at_current_airport_minutes": round(current_state.get_time_at_current_airport() * 60, 0),
                 "hours_since_accommodation": round(
                     current_state.get_hours_since_last_accommodation(), 2
+                ),
+                "minutes_since_accommodation": round(
+                    current_state.get_hours_since_last_accommodation() * 60, 0
                 ),
                 "hours_since_meal": round(
                     current_state.get_hours_since_last_meal(), 2
                 ),
-                "total_journey_hours": round(current_state.get_total_journey_time(), 2)
+                "minutes_since_meal": round(
+                    current_state.get_hours_since_last_meal() * 60, 0
+                ),
+                "total_journey_hours": round(current_state.get_total_journey_time(), 2),
+                "total_journey_minutes": round(current_state.get_total_journey_time() * 60, 0)
             },
             "mandatory_requirements": mandatory_costs,
             "optional_activities": optional_activities,

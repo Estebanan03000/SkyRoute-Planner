@@ -7,9 +7,25 @@ class Stack:
     def __init__(self):
         self._data = []  # _data is the list where the elements are stored
 
-    # method that allows adding an element to the stack
-    # item: element to add
     def push(self, item):
+        """Push an item onto the stack."""
+        self._data.append(item)
+
+    def pop(self):
+        """Remove and return the top item from the stack."""
+        if self.is_empty():
+            raise Exception("The stack is empty")
+        return self._data.pop()
+
+    def is_empty(self):
+        """Return True when the stack has no elements."""
+        return len(self._data) == 0
+
+    def peek(self):
+        """Return the top element without removing it."""
+        if self.is_empty():
+            raise Exception("The stack is empty")
+        return self._data[-1]
         self._data.append(item)
 
     # method that removes the top element of the stack

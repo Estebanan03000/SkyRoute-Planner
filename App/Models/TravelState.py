@@ -13,7 +13,8 @@ class TravelState:
         self,
         current_airport: Airport,
         initial_budget: float,
-        traveler_name: str
+        traveler_name: str,
+        initial_time_hours: float = 0.0
     ) -> None:
         """
         Initialize a new journey state.
@@ -22,10 +23,12 @@ class TravelState:
             current_airport: The starting airport
             initial_budget: Initial money available for the trip
             traveler_name: Name of the traveler
+            initial_time_hours: Initial available travel time in hours
         """
         self._current_airport: Airport = current_airport
         self._initial_budget: float = initial_budget
         self._current_budget: float = initial_budget
+        self._initial_time_hours: float = initial_time_hours
         self._total_spent: float = 0.0
         self._total_earned: float = 0.0
         self._traveler_name: str = traveler_name
@@ -70,6 +73,23 @@ class TravelState:
     def get_total_earned(self) -> float:
         """Get total amount earned from jobs."""
         return self._total_earned
+
+    def get_initial_time_hours(self) -> float:
+        """Get the initial available travel time in hours."""
+        return self._initial_time_hours
+
+    def get_remaining_time_hours(self) -> float:
+        """Get how many hours remain from initial time after time events."""
+        remaining = self._initial_time_hours - self._total_journey_time
+        return max(0.0, remaining)
+
+    def get_initial_time_minutes(self) -> float:
+        """Get the initial available travel time in minutes."""
+        return self._initial_time_hours * 60
+
+    def get_remaining_time_minutes(self) -> float:
+        """Get how many minutes remain from initial time after time events."""
+        return self.get_remaining_time_hours() * 60
 
     def get_traveler_name(self) -> str:
         """Get traveler's name."""
@@ -326,10 +346,18 @@ class TravelState:
                 "percentage_remaining": self.get_budget_remaining_percentage()
             },
             "time": {
+                "initial_time_hours": self._initial_time_hours,
+                "initial_time_minutes": self.get_initial_time_minutes(),
+                "remaining_time_hours": self.get_remaining_time_hours(),
+                "remaining_time_minutes": self.get_remaining_time_minutes(),
                 "total_journey_hours": self._total_journey_time,
+                "total_journey_minutes": self.get_total_journey_time() * 60,
                 "at_current_airport_hours": self._time_at_current_airport,
+                "at_current_airport_minutes": self._time_at_current_airport * 60,
                 "hours_since_last_accommodation": self._hours_since_last_accommodation,
-                "hours_since_last_meal": self._hours_since_last_meal
+                "minutes_since_last_accommodation": self._hours_since_last_accommodation * 60,
+                "hours_since_last_meal": self._hours_since_last_meal,
+                "minutes_since_last_meal": self._hours_since_last_meal * 60
             },
             "journey": {
                 "destinations_visited": self._destinations_visited.copy(),

@@ -1,3 +1,5 @@
+"""Domain model for flight routes between airports."""
+
 from __future__ import annotations
 
 from typing import List, Optional, TYPE_CHECKING
@@ -8,6 +10,7 @@ if TYPE_CHECKING:
 
 
 class Route:
+    """Represents a directed route from one airport to another."""
     def __init__(
         self,
         destiny_airport: Airport,
@@ -77,6 +80,7 @@ class Route:
         return aircraft in self._aircraft
 
     def _calculate_cost(self, aircraft: Aircraft) -> float:
+        """Calculate the route cost for the given aircraft."""
         if not self._has_aircraft(aircraft):
             raise ValueError(
                 f"The aircraft with id '{aircraft.get_id()}' is not available for this route."
@@ -89,6 +93,7 @@ class Route:
 
 
     def _calculate_time(self, aircraft: Aircraft) -> float:
+        """Calculate the route duration for the given aircraft."""
         if not self._has_aircraft(aircraft):
             raise ValueError(
                 f"The aircraft with id '{aircraft.get_id()}' is not available for this route."
@@ -100,6 +105,7 @@ class Route:
         self,
         allowed_aircraft_types: Optional[List[str]] = None
     ) -> List[Aircraft]:
+        """Return the list of aircraft that can fly this route, optionally filtered."""
         if allowed_aircraft_types is None or len(allowed_aircraft_types) == 0:
             return self._aircraft
 
@@ -114,6 +120,7 @@ class Route:
         criterion: str,
         allowed_aircraft_types: Optional[List[str]] = None
     ) -> Optional[Aircraft]:
+        """Select the optimal aircraft for this route based on a criterion."""
         available_aircraft = self.get_available_aircraft(allowed_aircraft_types)
 
         if len(available_aircraft) == 0:
@@ -135,6 +142,7 @@ class Route:
         criterion: str,
         allowed_aircraft_types: Optional[List[str]] = None
     ) -> float:
+        """Return the route weight based on the selected optimization criterion."""
         if self._is_blocked:
             return float("inf")
 
@@ -164,6 +172,7 @@ class Route:
         return self.get_weight_by_criterion("time")
 
     def to_dict(self) -> dict:
+        """Serialize the route details into a JSON-friendly dictionary."""
         return {
             "destination": self._destiny_airport.get_IATA_code(),
             "distanceKm": self._distance_in_km,

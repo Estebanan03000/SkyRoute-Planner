@@ -1,4 +1,9 @@
+"""Domain model for optional activities available at airports."""
+
+
 class Activity:
+    """Represents an activity a traveler can choose while staying at an airport."""
+
     def __init__(self, name: str, type: str, duration_per_minutes: int, cost_in_USD: float) -> None:
         self._name = name
         self._type = type
