@@ -165,19 +165,12 @@ def start_journey():
             return jsonify({"error": "Request body is required"}), 400
 
         origin = data.get("origin", "").upper()
-        final_destination = data.get("final_destination", "").upper()
         initial_budget = data.get("initial_budget", 0)
         initial_time_minutes = data.get("initial_time_minutes", data.get("initial_time", 0))
         traveler_name = data.get("traveler_name", "Anonymous Traveler")
 
         if not origin:
             return jsonify({"error": "Origin airport code is required"}), 400
-
-        if not final_destination:
-            return jsonify({"error": "Final destination airport code is required"}), 400
-
-        if final_destination == origin:
-            return jsonify({"error": "Final destination must be different from origin"}), 400
 
         if initial_budget <= 0:
             return jsonify({"error": "Initial budget must be positive"}), 400
@@ -186,11 +179,6 @@ def start_journey():
             return jsonify({"error": "Initial time must be zero or positive"}), 400
 
         initial_time_hours = initial_time_minutes / 60.0
-
-        # Validate destination airport exists
-        destination_airport = _graph.find_airport_by_iata(final_destination)
-        if not destination_airport:
-            return jsonify({"error": f"Final destination airport '{final_destination}' not found"}), 400
 
         # Start journey
         success, travel_state, message = _journey_simulator.start_journey(
@@ -208,14 +196,11 @@ def start_journey():
         _active_journeys[journey_id] = {
             "travel_state": travel_state,
             "decisions_history": [],
-            "final_destination": final_destination,
             "created_at": travel_state._journey_start_time.isoformat()
         }
 
         # Get initial options
         options = _journey_simulator.present_airport_options(travel_state)
-
-        options["final_destination"] = final_destination
 
         return jsonify({
             "success": True,
@@ -225,7 +210,6 @@ def start_journey():
             "initial_budget": initial_budget,
             "initial_time_minutes": initial_time_minutes,
             "origin": origin,
-            "final_destination": final_destination,
             "current_state": options
         }), 201
 
@@ -258,12 +242,10 @@ def get_journey_state(journey_id: str):
 
         # Get current options
         options = _journey_simulator.present_airport_options(travel_state)
-        options["final_destination"] = journey.get("final_destination")
 
         return jsonify({
             "success": True,
             "journey_id": journey_id,
-            "final_destination": journey.get("final_destination"),
             "current_state": options
         }), 200
 
@@ -320,8 +302,7 @@ def execute_decision(journey_id: str):
             _active_journeys[journey_id]["decisions_history"].append(decision_record.to_dict())
 
         # Get next options
-        options = _journey_simulator.present_airport_options(new_state)
-        options["final_destination"] = journey.get("final_destination")
+        options = _journey_simulator.present_airport_options(new_state)        
 
         # Check if journey can continue
         can_continue = _journey_simulator.can_continue_journey(new_state)
@@ -330,7 +311,6 @@ def execute_decision(journey_id: str):
             "success": True,
             "message": message,
             "journey_id": journey_id,
-            "final_destination": journey.get("final_destination"),
             "decision": decision_record.to_dict() if decision_record else None,
             "new_state": options,
             "can_continue": can_continue,
@@ -481,23 +461,6 @@ def get_route_suggestions(journey_id: str):
 
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
-
-
-@main_routes.route("/api/graph", methods=["GET"])
-def get_graph():
-    """Return the full graph data for airports and routes."""
-    _initialize_services()
-
-    try:
-        graph_data = _serialize_graph()
-        return jsonify({
-            "success": True,
-            "airports": graph_data["airports"],
-            "routes": graph_data["routes"]
-        }), 200
-    except Exception as e:
-        return jsonify({"error": f"Server error: {str(e)}"}), 500
-
 
 @main_routes.route("/api/graph/path", methods=["GET"])
 def get_graph_path():
@@ -715,7 +678,6 @@ def interrupt_route(journey_id: str):
 
         origin = data.get("origin", "").upper()
         destination = data.get("destination", "").upper()
-        final_destination = data.get("final_destination", "").upper()
         criterion = data.get("criterion", "cost")
 
         if not origin or not destination:
@@ -776,9 +738,17 @@ def load_graph_file():
 
     try:
 
+        import os
+
         uploaded_file = request.files["file"]
 
-        temp_path = "temp_graph.json"
+        temp_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                "DataAccess",
+                "temp_graph.json"
+            )
+        )
 
         uploaded_file.save(temp_path)
 
@@ -799,6 +769,10 @@ def load_graph_file():
         })
 
     except Exception as e:
+
+        import traceback
+
+        traceback.print_exc()
 
         return jsonify({
             "success": False,

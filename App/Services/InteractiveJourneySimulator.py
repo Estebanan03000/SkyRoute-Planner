@@ -393,18 +393,16 @@ class InteractiveJourneySimulator:
         destination_code = decision.get("destination")
         aircraft_id = decision.get("aircraft_id")  # New: specify aircraft type
 
-        # Validate destination exists
-        destination_airport = self._graph.find_airport_by_iata(destination_code)
-        if not destination_airport:
-            return False, current_state, None, "Destination airport not found"
-
         current_airport_code = current_state.get_current_airport().get_IATA_code()
         current_airport = current_state.get_current_airport()
 
         # Find direct route to destination
         origin_route = None
+
         for route in current_airport.get_adjacencies():
+
             if route.get_destiny_airport().get_IATA_code() == destination_code:
+
                 origin_route = route
                 break
 
@@ -467,7 +465,7 @@ class InteractiveJourneySimulator:
 
         # Execute flight
         current_state.fly_to_airport(
-            destination_airport,
+            origin_route.get_destiny_airport(),
             flight_cost,
             flight_time_hours
         )

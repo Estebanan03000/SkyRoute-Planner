@@ -4,16 +4,31 @@
         return response.json();
     },
 
-    startJourney: async ({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name }) => {
-        const response = await fetch('/api/journey/start', {
+    startJourney: async ({
+    origin,
+    initial_budget,
+    traveler_name
+}) => {
+
+    const response = await fetch(
+        '/api/journey/start',
+        {
             method: 'POST',
+
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name })
-        });
-        return response.json();
-    },
+
+            body: JSON.stringify({
+                origin,
+                initial_budget,
+                traveler_name
+            })
+        }
+    );
+
+    return response.json();
+},
 
     getJourneyState: async (journeyId) => {
         const response = await fetch(`/api/journey/${journeyId}/state`);
@@ -135,45 +150,14 @@ calculateDijkstra: async (
 const startButton = document.getElementById('startJourney');
 const getStateButton = document.getElementById('getState');
 const executeDecisionButton = document.getElementById('executeDecision');
-const decisionTypeSelect = document.getElementById('decisionType');
+
 const journeyIdInput = document.getElementById('journeyId');
 const destinationInput = document.getElementById('destination');
-const jobIdInput = document.getElementById('jobId');
-const jobHoursInput = document.getElementById('jobHours');
-const activityIdInput = document.getElementById('activityId');
-const initialTimeInput = document.getElementById('initialTime');
-const finalDestinationInput = document.getElementById('finalDestination');
-const statePanel = document.getElementById('statePanel');
-const logPanel = document.getElementById('logPanel');
-const reportPanel = document.getElementById('reportPanel');
-const suggestionsPanel = document.getElementById('suggestionsPanel');
-const graphPanel = document.getElementById('graphPanel');
-const dijkstraPanel = document.getElementById('dijkstraPanel');
-const stateContent = document.getElementById('stateContent');
-const logContent = document.getElementById('logContent');
-const reportContent = document.getElementById('reportContent');
-const suggestionsContent = document.getElementById('suggestionsContent');
-const graphContent = document.getElementById('graphContent');
-const dijkstraContent = document.getElementById('dijkstraContent');
-const graphContainer = document.getElementById('graph-container');
-const graphImage = document.getElementById('graphImage');
-const graphStartInput = document.getElementById('graphStart');
-const graphEndInput = document.getElementById('graphEnd');
-const routeCriterionSelect = document.getElementById('routeCriterion');
-const calculateRoutePlanButton = document.getElementById('calculateRoutePlan');
-const routePlannerPanel = document.getElementById('routePlannerPanel');
-const routePlannerContent = document.getElementById('routePlannerContent');
-const showGraphButton = document.getElementById('showGraph');
-const toggleGraphSummaryButton = document.getElementById('toggleGraphSummary');
-const graphSummaryContainer = document.getElementById('graphSummaryContainer');
-const runDijkstraCostButton = document.getElementById('runDijkstraCost');
-const runDijkstraTimeButton = document.getElementById('runDijkstraTime');
-const journeySuggestionsPanel = document.getElementById('suggestionsPanel');
-const journeySuggestionsContent = document.getElementById('suggestionsContent');
-const floatingStatus = document.getElementById('floatingStatus');
-const floatingAirport = document.getElementById('floatingAirport');
-const floatingBudget = document.getElementById('floatingBudget');
-const floatingTime = document.getElementById('floatingTime');
+
+const originNode = document.getElementById('originNode');
+const destinationNode = document.getElementById('destinationNode');
+const routeArrow = document.getElementById('routeArrow');
+const routeStatus = document.getElementById('routeStatus');
 
 const loadGraphButton = document.getElementById('loadGraph');
 const graphFileInput = document.getElementById('graphFile');
@@ -188,6 +172,7 @@ const mealRequiredValue = document.getElementById('mealRequiredValue');
 const accommodationRequiredValue = document.getElementById('accommodationRequiredValue');
 const routeValue = document.getElementById('routeValue');
 
+const timelineContainer = document.getElementById('journeyTimeline');
 const reportContainer = document.getElementById('reportContainer');
 
 const availableFlights = document.getElementById('availableFlights');
@@ -235,6 +220,45 @@ const dijkstraResult =
     document.getElementById(
         'dijkstraResult'
     );
+
+function showResponse(data) {
+
+    console.log(
+        'RESPONSE:',
+        data
+    );
+
+}
+
+function showError(error) {
+
+    console.error(
+        'ERROR:',
+        error
+    );
+
+    alert(
+        error?.message ||
+        'Ha ocurrido un error'
+    );
+
+}
+
+function updateTravelerState(state) {
+
+    currentAirportValue.textContent =
+        state.current_airport || '-';
+
+    budgetValue.textContent =
+        `$${state.current_budget || 0}`;
+
+    timeValue.textContent =
+        `${state.total_journey_time || 0} h`;
+
+    destinationsValue.textContent =
+        state.destinations_visited?.length || 0;
+
+}
 
 function renderAvailableOptions(state) {
 
@@ -422,8 +446,6 @@ async function loadJourneyReport(
             await API.getJourneyReport(
                 journeyId
             );
-        
-            console.log(data.report);
 
         if (!data.success) {
             return;
@@ -595,6 +617,27 @@ async function loadJourneyReport(
     }
 }
 
+function renderTimeline(events) {
+
+    timelineContainer.innerHTML = '';
+
+    events.forEach(event => {
+
+        const div =
+            document.createElement('div');
+
+        div.className = 'timeline-item';
+
+        div.innerHTML = `
+            <strong>${event.event_type}</strong>
+            <br>
+            ${event.description}
+        `;
+
+        timelineContainer.appendChild(div);
+    });
+}
+
 async function refreshGraph() {
 
     const graphData =
@@ -641,27 +684,53 @@ async function refreshGraph() {
 }
 
 startButton.addEventListener('click', async () => {
-    const origin = document.getElementById('origin').value.trim() || 'GRU';
-    const final_destination = finalDestinationInput?.value.trim() || 'GIG';
-    const initial_budget = Number(document.getElementById('budget').value) || 500;
-    const initial_time_minutes = Number(initialTimeInput?.value || 0) || 0;
-    const traveler_name = document.getElementById('traveler').value.trim() || 'Anonimo';
+
+    const origin =
+        document.getElementById('origin')
+            .value.trim()
+            .toUpperCase() || 'GRU';
+
+    const initial_budget =
+        Number(
+            document.getElementById('budget').value
+        ) || 500;
+
+    const traveler_name =
+        document.getElementById('traveler')
+            .value.trim() || 'Anonimo';
 
     try {
-        const data = await API.startJourney({ origin, final_destination, initial_budget, initial_time_minutes, traveler_name });
-        showResponse(data, data.success ? `Viaje iniciado: ${data.journey_id}` : 'No se pudo iniciar el viaje');
 
-        if (data.success && data.journey_id) {
-            journeyIdInput.value = data.journey_id;
-            renderStateContent(data.current_state);
-            renderJourneyFlightSuggestions(data.current_state);
-            populateJobSelect(data.current_state?.available_jobs || []);
-            populateActivitySelect(data.current_state?.optional_activities || []);
-            showPanels([statePanel, journeySuggestionsPanel]);
+        const data = await API.startJourney({
+
+            origin,
+
+            initial_budget,
+
+            traveler_name
+
+        });
+
+showResponse(data);
+
+        if (
+            data.success &&
+            data.journey_id
+        ) {
+
+            journeyIdInput.value =
+                data.journey_id;
+
         }
-    } catch (error) {
-        showError(error);
+
     }
+
+    catch (error) {
+
+        showError(error);
+
+    }
+
 });
 
 getStateButton.addEventListener(
@@ -735,16 +804,29 @@ getStateButton.addEventListener(
 
 
 executeDecisionButton.addEventListener('click', async () => {
-    const journeyId = getJourneyIdOrNotify();
-    if (!journeyId) return;
+    const journeyId = journeyIdInput.value.trim();
+    const destination = destinationInput.value.trim().toUpperCase();
+
+    if (!journeyId) {
+        return showResponse({ error: 'Journey ID es requerido.' });
+    }
+
+    if (!destination) {
+        return showResponse({ error: 'Destino es requerido.' });
+    }
 
     try {
-
         const data = await API.executeDecision(journeyId, {
             type: 'FLIGHT',
             destination
         });
+
         showResponse(data);
+
+        if (data.success) {
+            getStateButton.click();
+        }
+
     } catch (error) {
         showError(error);
     }
@@ -832,8 +914,6 @@ interruptRouteButton.addEventListener(
                     origin,
                     destination
                 );
-
-            console.log(result);
 
             alert(
                 'Ruta interrumpida correctamente'
