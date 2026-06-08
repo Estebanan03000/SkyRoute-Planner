@@ -146,6 +146,8 @@ def get_journey_state(journey_id: str):
     _initialize_services()
 
     try:
+        print("Journey solicitado:", journey_id)
+        print("Journeys activos:", list(_active_journeys.keys()))
         if journey_id not in _active_journeys:
             return jsonify({"error": "Journey not found"}), 404
 
@@ -402,6 +404,178 @@ def reset_journey(journey_id: str):
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
 
+@main_routes.route("/api/journey/<journey_id>/interrupt-route", methods=["POST"])
+def interrupt_route(journey_id: str):
+    _initialize_services()
+
+    try:
+        if journey_id not in _active_journeys:
+            return jsonify({"error": "Journey not found"}), 404
+
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+
+        origin = data.get("origin", "").upper()
+        destination = data.get("destination", "").upper()
+        final_destination = data.get("final_destination", "").upper()
+        criterion = data.get("criterion", "cost")
+
+        if not origin or not destination:
+            return jsonify({"error": "Origin and destination are required"}), 400
+
+        blocked = _graph.block_route(origin, destination)
+
+        if not blocked:
+            return jsonify({
+                "success": False,
+                "message": "Route does not exist"
+            }), 404
+
+        journey = _active_journeys[journey_id]
+        travel_state = journey["travel_state"]
+        current_airport = travel_state.get_current_airport().get_IATA_code()
+
+        new_route = None
+
+        if final_destination:
+            new_route = _graph.dijkstra(
+                current_airport,
+                final_destination,
+                criterion
+            )
+
+        travel_state.add_event(
+            event_type="ROUTE_INTERRUPTION",
+            description=f"Route {origin} -> {destination} was interrupted",
+            cost=0,
+            time_minutes=0
+        )
+
+        return jsonify({
+            "success": True,
+            "message": f"Route {origin} -> {destination} was blocked successfully",
+            "blocked_route": {
+                "origin": origin,
+                "destination": destination
+            },
+            "current_airport": current_airport,
+            "final_destination": final_destination if final_destination else None,
+            "recalculated_route": new_route
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+@main_routes.route(
+    "/api/load-graph",
+    methods=["POST"]
+)
+def load_graph_file():
+
+    global _graph
+    global _planning_service
+    global _journey_simulator
+
+    try:
+
+        uploaded_file = request.files["file"]
+
+        temp_path = "temp_graph.json"
+
+        uploaded_file.save(temp_path)
+
+        json_service = JSONService(temp_path)
+
+        _graph = json_service.load_graph()
+
+        _planning_service = PlanningService(_graph)
+
+        _journey_simulator = InteractiveJourneySimulator(
+            _graph,
+            _planning_service
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "Graph loaded successfully"
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@main_routes.route(
+    "/api/dijkstra",
+    methods=["POST"]
+)
+def calculate_dijkstra():
+
+    _initialize_services()
+
+    try:
+
+        data = request.get_json()
+
+        origin = data.get("origin").upper()
+        destination = data.get("destination").upper()
+        
+        criterion = data.get(
+            "criterion",
+            "cost"
+        )
+
+        result = _graph.dijkstra(
+            origin,
+            destination,
+            criterion
+        )
+
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+    
+@main_routes.route("/api/graph", methods=["GET"])
+def get_graph():
+    _initialize_services()
+
+    nodes = []
+    edges = []
+
+    for airport in _graph.get_airports():
+
+        nodes.append({
+            "id": airport.get_IATA_code(),
+            "label": airport.get_IATA_code(),
+            "shape": "dot",
+            "size": 18,
+            "color": "#ef4444" if airport.get_isHub() else "#3b82f6"
+        })
+
+        for route in airport.get_adjacencies():
+
+            edges.append({
+                "from": airport.get_IATA_code(),
+                "to": route.get_destiny_airport().get_IATA_code(),
+                "label": str(round(route.get_distance_in_km())),
+                "color": "red" if route.is_blocked() else "green"
+            })
+
+    return jsonify({
+        "nodes": nodes,
+        "edges": edges
+    })
 
 def initialize_planning_service() -> None:
     """Initialize internal service instances for app startup."""

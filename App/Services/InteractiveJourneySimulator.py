@@ -393,6 +393,14 @@ class InteractiveJourneySimulator:
         if not origin_route:
             return False, current_state, None, "No direct flight available"
 
+        if origin_route.is_blocked():
+            return (
+                False,
+                current_state,
+                None,
+                f"The route {current_airport_code} -> {destination_code} is currently blocked"
+            )
+        
         # Get aircraft options for this route
         available_aircraft = origin_route.get_aircraft()
         if not available_aircraft:
@@ -437,12 +445,16 @@ class InteractiveJourneySimulator:
                    f"Insufficient budget for flight (need ${flight_cost:.2f}, "   \
                    f"have ${current_state.get_current_budget():.2f})"
 
+        current_state.start_flight(origin_route)
+
         # Execute flight
         current_state.fly_to_airport(
             destination_airport,
             flight_cost,
             flight_time_hours
         )
+
+        current_state.complete_flight()
 
         # Track distance and subsidized distance
         current_state.add_distance_traveled(distance_km)
@@ -638,3 +650,18 @@ class InteractiveJourneySimulator:
             "- Validate journey continuation\n"
             "- Generate journey summaries"
         )
+
+    def interrupt_route(
+        self,
+        current_state: TravelState,
+        origin_code: str,
+        destination_code: str
+    ) -> dict:
+        self._graph.block_route(
+            origin_code,
+            destination_code
+        )
+        return {
+            "routeBlocked": True,
+            "recalculationRequired": False
+        }

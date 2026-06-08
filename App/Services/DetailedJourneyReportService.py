@@ -376,8 +376,21 @@ class DetailedJourneyReportService:
         if not journey_states:
             return {"error": "No journey data provided"}
 
-        initial_state = journey_states[0]
         final_state = journey_states[-1]
+        
+        visited = final_state.get_destinations_visited()
+
+        initial_airport = (
+            visited[0]
+            if visited
+            else final_state.get_current_airport().get_IATA_code()
+        )
+
+        final_airport = (
+            visited[-1]
+            if visited
+            else final_state.get_current_airport().get_IATA_code()
+        )
 
         return {
             "report_metadata": {
@@ -386,8 +399,8 @@ class DetailedJourneyReportService:
                 "report_type": "Complete Journey Report"
             },
             "journey_overview": {
-                "initial_airport": initial_state.get_current_airport().get_IATA_code(),
-                "final_airport": final_state.get_current_airport().get_IATA_code(),
+                "initial_airport": initial_airport,
+                "final_airport": final_airport,
                 "total_states": len(journey_states),
                 "total_events": len(final_state.get_journey_events()),
                 "total_decisions": len(final_state.get_travel_decisions())

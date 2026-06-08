@@ -1,98 +1,485 @@
-/* Reset básico */
+/* ===================================== */
+/* RESET */
+/* ===================================== */
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* ===================================== */
+/* BODY */
+/* ===================================== */
+
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f6f9;
-    color: #333;
+
+    min-height: 100vh;
+
+    font-family:
+        "Segoe UI",
+        sans-serif;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0f172a,
+            #1e293b,
+            #0f172a
+        );
+
+    color: #f8fafc;
+
     padding: 20px;
 }
 
+/* ===================================== */
+/* MAIN */
+/* ===================================== */
+
 main {
-    max-width: 1200px;
+
+    max-width: 1900px;
+
     margin: auto;
 }
 
+/* ===================================== */
+/* TITULO */
+/* ===================================== */
+
 h1 {
-    text-align: center;
-    margin-bottom: 10px;
-    color: #1e3a8a;
-}
 
-p {
     text-align: center;
+
+    font-size: 3rem;
+
     margin-bottom: 25px;
-}
 
-section {
-    background: white;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    color: #38bdf8;
+
+    text-shadow:
+        0 0 20px rgba(56,189,248,.4);
 }
 
 h2 {
+
+    color: #38bdf8;
+
     margin-bottom: 15px;
-    color: #2563eb;
+
+    font-size: 1.2rem;
 }
 
-section div {
-    margin-bottom: 12px;
+h3 {
+
+    color: #e2e8f0;
+
+    margin-bottom: 10px;
+}
+
+/* ===================================== */
+/* DASHBOARD */
+/* ===================================== */
+
+.dashboard {
+
+    display: grid;
+
+    grid-template-columns:
+        260px
+        1fr
+        280px;
+
+    gap: 15px;
+
+    align-items: start;
+
+    margin-bottom: 20px;
+}
+
+/* ===================================== */
+/* COLUMNAS */
+/* ===================================== */
+
+.left-column,
+.right-column {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.center-column {
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+/* ===================================== */
+/* TARJETAS */
+/* ===================================== */
+
+.card {
+
+    background:
+        rgba(
+            30,
+            41,
+            59,
+            .92
+        );
+
+    border:
+        1px solid
+        rgba(
+            56,
+            189,
+            248,
+            .15
+        );
+
+    border-radius: 18px;
+
+    padding: 14px;
+
+    backdrop-filter: blur(10px);
+
+    box-shadow:
+        0 12px 25px rgba(0,0,0,.25);
+
+    transition: .25s;
+}
+
+.card:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 16px 30px rgba(0,0,0,.35);
+}
+
+/* ===================================== */
+/* GRAFO */
+/* ===================================== */
+
+#graph-container {
+
+    width: 100%;
+
+    height: 550px;
+
+    border-radius: 16px;
+
+    background: white;
+
+    overflow: hidden;
+}
+
+.graph-controls {
+
+    display: flex;
+
+    gap: 10px;
+
+    margin-bottom: 15px;
+}
+
+/* ===================================== */
+/* INPUTS */
+/* ===================================== */
+
+input,
+select {
+
+    width: 100%;
+
+    padding: 10px;
+
+    margin-top: 5px;
+
+    margin-bottom: 6px;
+
+    border-radius: 10px;
+
+    border: none;
+
+    background: #f1f5f9;
+
+    color: #0f172a;
 }
 
 label {
-    display: inline-block;
-    width: 130px;
-    font-weight: bold;
+
+    color: #cbd5e1;
+
+    font-weight: 600;
 }
 
-input {
-    width: 220px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
+/* ===================================== */
+/* BOTONES */
+/* ===================================== */
 
 button {
-    padding: 10px 15px;
-    margin: 5px;
+
+    width: 100%;
+
     border: none;
-    border-radius: 6px;
-    background-color: #2563eb;
-    color: white;
+
+    border-radius: 10px;
+
+    padding: 12px;
+
     cursor: pointer;
-    transition: 0.2s;
+
+    color: white;
+
+    font-weight: 700;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #38bdf8
+        );
+
+    transition: .25s;
 }
 
 button:hover {
-    background-color: #1d4ed8;
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 6px 18px rgba(56,189,248,.35);
 }
 
-#response {
-    background: #1e293b;
-    color: #f8fafc;
-    padding: 15px;
-    border-radius: 8px;
-    min-height: 200px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-}
+/* ===================================== */
+/* ESTADO */
+/* ===================================== */
 
-/* Contenedor del grafo */
-#graph-container {
-    width: 100%;
-    height: 500px;
-    border: 2px dashed #94a3b8;
-    border-radius: 8px;
-    background: #f8fafc;
+.state-item {
+
     display: flex;
-    justify-content: center;
+
+    justify-content: space-between;
+
     align-items: center;
-    color: #64748b;
-    font-size: 1.1rem;
+
+    padding: 10px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.08);
+}
+
+.label {
+
+    font-weight: 600;
+
+    color: #cbd5e1;
+}
+
+/* ===================================== */
+/* OPCIONES */
+/* ===================================== */
+
+.options-grid {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 15px;
+}
+
+.option-panel {
+
+    background:
+        rgba(
+            15,
+            23,
+            42,
+            .65
+        );
+
+    padding: 15px;
+
+    border-radius: 12px;
+
+    border:
+        1px solid rgba(255,255,255,.05);
+}
+
+.option-item {
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .05
+        );
+
+    padding: 10px;
+
+    border-radius: 10px;
+
+    margin-top: 10px;
+}
+
+/* ===================================== */
+/* DIJKSTRA */
+/* ===================================== */
+
+.dijkstra-form {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+#dijkstraResult {
+
+    margin-top: 15px;
+
+    padding: 15px;
+
+    border-radius: 12px;
+
+    background:
+        rgba(
+            15,
+            23,
+            42,
+            .7
+        );
+
+    border-left:
+        4px solid #38bdf8;
+}
+
+/* ===================================== */
+/* INTERRUPCIONES */
+/* ===================================== */
+
+.interrupt-form {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+/* ===================================== */
+/* HISTORIAL */
+/* ===================================== */
+
+.full-width-card {
+
+    margin-bottom: 20px;
+}
+
+#journeyTimeline {
+
+    max-height: 500px;
+
+    overflow-y: auto;
+}
+
+.timeline-item {
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .05
+        );
+
+    border-left:
+        4px solid #38bdf8;
+
+    padding: 12px;
+
+    margin-bottom: 10px;
+
+    border-radius: 10px;
+}
+
+.timeline-title {
+
+    font-weight: bold;
+
+    margin-bottom: 6px;
+}
+
+.timeline-description {
+
+    color: #cbd5e1;
+}
+
+.timeline-date {
+
+    margin-top: 5px;
+
+    font-size: .8rem;
+
+    color: #94a3b8;
+}
+
+/* ===================================== */
+/* REPORTE */
+/* ===================================== */
+
+#reportContainer {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(280px,1fr)
+        );
+
+    gap: 15px;
+}
+
+.report-section {
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .05
+        );
+
+    padding: 15px;
+
+    border-radius: 12px;
+}
+
+/* ===================================== */
+/* RESPONSIVE */
+/* ===================================== */
+
+@media (max-width: 1400px) {
+
+    .dashboard {
+
+        grid-template-columns: 1fr;
+    }
+
+    #graph-container {
+
+        height: 500px;
+    }
 }

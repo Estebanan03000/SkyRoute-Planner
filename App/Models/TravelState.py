@@ -29,6 +29,8 @@ class TravelState:
         self._total_spent: float = 0.0
         self._total_earned: float = 0.0
         self._traveler_name: str = traveler_name
+        self._flight_in_progress = False
+        self._current_route = None
 
         # Time tracking (in hours)
         self._journey_start_time: datetime = datetime.now()
@@ -43,6 +45,7 @@ class TravelState:
 
         # Journey history
         self._destinations_visited: List[str] = [current_airport.get_IATA_code()]
+        self._destination_details: dict = {}
         self._journey_events: List[dict] = []
         self._travel_decisions: List[dict] = []
 
@@ -99,6 +102,13 @@ class TravelState:
     def get_travel_decisions(self) -> List[dict]:
         """Get list of all decisions made by traveler."""
         return self._travel_decisions.copy()
+    
+    def is_in_flight(self) -> bool:
+        return self._flight_in_progress
+
+
+    def get_current_route(self):
+        return self._current_route
 
     # ==================== Budget Management ====================
 
@@ -215,6 +225,30 @@ class TravelState:
 
     # ==================== Airport Management ====================
 
+    def register_destination_statistics(
+        self,
+        airport_code: str,
+        city: str,
+        country: str,
+        stay_time_hours: float,
+        destination_cost: float
+    ) -> None:
+        if airport_code not in self._destination_details:
+            self._destination_details[airport_code] = {
+                "airport_code": airport_code,
+                "city": city,
+                "country": country,
+                "stay_time_hours": 0.0,
+                "destination_cost": 0.0
+            }
+
+        self._destination_details[airport_code]["stay_time_hours"] += stay_time_hours
+        self._destination_details[airport_code]["destination_cost"] += destination_cost
+
+
+    def get_destination_details(self) -> dict:
+        return self._destination_details.copy()
+
     def fly_to_airport(
         self,
         destination_airport: Airport,
@@ -253,6 +287,20 @@ class TravelState:
             time_minutes=flight_duration_hours * 60
         )
 
+    def start_flight(self, route) -> None:
+        self._flight_in_progress = True
+        self._current_route = route
+
+
+    def cancel_flight(self) -> None:
+        self._flight_in_progress = False
+        self._current_route = None
+
+
+    def complete_flight(self) -> None:
+        self._flight_in_progress = False
+        self._current_route = None
+        
     # ==================== State Snapshot ====================
 
     def to_dict(self) -> dict:

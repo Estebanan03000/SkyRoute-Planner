@@ -4,63 +4,386 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkyRoute Planner</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='Style/components.css') }}">
-    <script type="module" src="{{ url_for('static', filename='JavaScript/controllerUI.js') }}"></script>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='Style/components.css') }}">
+
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <script type="module"
+            src="{{ url_for('static', filename='JavaScript/controllerUI.js') }}"
+            defer>
+    </script>
 </head>
+
 <body>
-    <main>
-        <h1>SkyRoute Planner</h1>
 
-        <section>
-            <h2>Visualización del Grafo</h2>
-            <div id="graph-container">
-                <p>El grafo aparecerá aquí</p>
-            </div>
-        </section>
+<main>
 
-        <section>
-            <h2>Iniciar viaje</h2>
-            <div>
-                <label for="origin">Origen:</label>
-                <input id="origin" type="text" value="GRU">
-            </div>
-            <div>
-                <label for="budget">Presupuesto:</label>
-                <input id="budget" type="number" value="500">
-            </div>
-            <div>
-                <label for="traveler">Viajero:</label>
-                <input id="traveler" type="text" value="Juan">
-            </div>
-            <button id="startJourney">Iniciar viaje</button>
-        </section>
+    <h1>SkyRoute Planner</h1>
 
-        <section>
-            <h2>Viaje activo</h2>
-            <div>
-                <label for="journeyId">Journey ID:</label>
-                <input id="journeyId" type="text" placeholder="j_12345">
-            </div>
-            <button id="getState">Obtener estado</button>
-            <button id="getLog">Obtener historial</button>
-            <button id="getReport">Generar reporte</button>
-            <button id="getSuggestions">Sugerencias de ruta</button>
-            <button id="resetJourney">Resetear viaje</button>
-        </section>
+    <div class="dashboard">
 
-        <section>
-            <h2>Decisión de vuelo</h2>
-            <div>
-                <label for="destination">Destino (IATA):</label>
-                <input id="destination" type="text" value="GIG">
-            </div>
-            <button id="executeDecision">Ejecutar vuelo</button>
-        </section>
+        <div class="left-column">
 
-        <section>
-            <h2>Respuesta del servidor</h2>
-            <pre id="response"></pre>
-        </section>
-    </main>
+            <section class="card">
+
+                <h2>Visualización del Grafo</h2>
+
+                <div class="graph-controls">
+
+                    <input
+                        type="file"
+                        id="graphFile"
+                        accept=".json"
+                    >
+
+                    <button id="loadGraph">
+                        Cargar Grafo
+                    </button>
+
+                </div>
+
+                <div id="graph-container"></div>
+
+            </section>
+
+            <section class="card">
+
+                <h2>Iniciar Viaje</h2>
+
+                <div>
+                    <label for="origin">Origen:</label>
+                    <input
+                        id="origin"
+                        type="text"
+                        value="GRU">
+                </div>
+
+                <div>
+                    <label for="budget">Presupuesto:</label>
+                    <input
+                        id="budget"
+                        type="number"
+                        value="500">
+                </div>
+
+                <div>
+                    <label for="traveler">Viajero:</label>
+                    <input
+                        id="traveler"
+                        type="text"
+                        value="Juan">
+                </div>
+
+                <button id="startJourney">
+                    Iniciar Viaje
+                </button>
+
+            </section>
+
+            <section class="card">
+
+                <h2>Viaje Activo</h2>
+
+                <div>
+                    <label for="journeyId">Journey ID:</label>
+                    <input
+                        id="journeyId"
+                        type="text"
+                        placeholder="j_12345">
+                </div>
+
+                <div class="actions-grid">
+
+                    <button id="getState">
+                        Estado
+                    </button>
+
+                </div>
+
+            </section>
+
+            <section class="card">
+
+                <h2>Decisión de Vuelo</h2>
+
+                <div>
+                    <label for="destination">Destino:</label>
+                    <input
+                        id="destination"
+                        type="text"
+                        value="GIG">
+                </div>
+
+                <button id="executeDecision">
+                    Ejecutar Vuelo
+                </button>
+
+            </section>
+
+            <section class="card">
+
+                <h2>
+                    🔍 Ruta Óptima (Dijkstra)
+                </h2>
+
+                <div class="dijkstra-form">
+
+                    <div>
+
+                        <label>
+                            Origen
+                        </label>
+
+                        <input
+                            id="dijkstraOrigin"
+                            type="text"
+                            placeholder="GRU"
+                        >
+
+                    </div>
+
+                    <div>
+
+                        <label>
+                            Destino
+                        </label>
+
+                        <input
+                            id="dijkstraDestination"
+                            type="text"
+                            placeholder="BOG"
+                        >
+
+                    </div>
+
+                    <div>
+
+                        <label>
+                            Criterio
+                        </label>
+
+                        <select id="dijkstraCriterion">
+
+                            <option value="cost">
+                                Menor costo
+                            </option>
+
+                            <option value="time">
+                                Menor tiempo
+                            </option>
+
+                            <option value="distance">
+                                Menor distancia
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <button id="calculateRouteButton">
+
+                        Calcular Ruta
+
+                    </button>
+
+                </div>
+
+                <div id="dijkstraResult">
+
+                    <p>
+                        No se ha calculado ninguna ruta.
+                    </p>
+
+                </div>
+
+            </section>
+
+        </div>
+
+        <div class="right-column">
+
+            <section class="card">
+
+                <h2>Estado del Viajero</h2>
+
+                <div id="travelerState">
+
+                    <div class="state-item">
+                        <span class="label">Aeropuerto actual:</span>
+                        <span id="currentAirportValue">-</span>
+                    </div>
+
+                    <div class="state-item">
+                        <span class="label">Presupuesto:</span>
+                        <span id="budgetValue">-</span>
+                    </div>
+
+                    <div class="state-item">
+                        <span class="label">Tiempo total:</span>
+                        <span id="timeValue">-</span>
+                    </div>
+
+                    <div class="state-item">
+                        <span class="label">Destinos visitados:</span>
+                        <span id="destinationsValue">-</span>
+                    </div>
+
+                    <div class="state-item">
+                        <span class="label">Ruta recorrida:</span>
+                        <span id="routeValue">-</span>
+                    </div>
+
+                    <div class="state-item">
+                        <span class="label">Ciudad:</span>
+                        <span id="cityValue">-</span>
+                    </div>
+
+                    <div class="state-item">
+                        <span class="label">País:</span>
+                        <span id="countryValue">-</span>
+                    </div>
+
+                    <div class="state-item">
+                        <span class="label">Comidas requeridas:</span>
+                        <span id="mealRequiredValue">-</span>
+                    </div>
+
+                    <div class="state-item">
+                        <span class="label">Alojamiento requerido:</span>
+                        <span id="accommodationRequiredValue">-</span>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <section class="card">
+
+                <h2>Opciones Disponibles</h2>
+
+                <div class="options-grid">
+
+                    <div class="option-panel">
+
+                        <h3>✈ Próximos Vuelos</h3>
+
+                        <div id="availableFlights">
+
+                            <p>No hay vuelos disponibles.</p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="option-panel">
+
+                        <h3>🎯 Actividades</h3>
+
+                        <div id="availableActivities">
+
+                            <p>No hay actividades disponibles.</p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="option-panel">
+
+                        <h3>💼 Trabajos</h3>
+
+                        <div id="availableJobs">
+
+                            <p>No hay trabajos disponibles.</p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <section class="card">
+
+                <h2>
+                    🚨 Interrupción de Ruta
+                </h2>
+
+                <div class="interrupt-form">
+
+                    <div>
+
+                        <label>
+                            Origen
+                        </label>
+
+                        <input
+                            id="interruptOrigin"
+                            type="text"
+                            placeholder="GRU"
+                        >
+
+                    </div>
+
+                    <div>
+
+                        <label>
+                            Destino
+                        </label>
+
+                        <input
+                            id="interruptDestination"
+                            type="text"
+                            placeholder="GIG"
+                        >
+
+                    </div>
+
+                    <button id="interruptRouteButton">
+
+                        Interrumpir Ruta
+
+                    </button>
+
+                </div>
+
+            </section>
+
+        </div>
+    
+    </div>
+
+    <section class="card full-width-card">
+
+        <h2>Historial del Viaje</h2>
+
+        <div id="journeyTimeline">
+
+            <p>
+                No hay eventos registrados.
+            </p>
+
+        </div>
+
+    </section>
+
+    <section class="card full-width-card">
+
+        <h2>Reporte Final</h2>
+
+        <div id="reportContainer">
+
+            <p>
+                El reporte aparecerá aquí.
+            </p>
+
+        </div>
+
+    </section>
+    
+</main>
+
 </body>
 </html>
