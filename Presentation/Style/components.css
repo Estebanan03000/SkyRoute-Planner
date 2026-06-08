@@ -483,3 +483,75 @@ button:hover {
         height: 500px;
     }
 }
+
+.warning-text {
+    color: red;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.progress-container {
+    width: 100%;
+    height: 16px;
+    background: #1a2238;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 20px;
+    transition: width .4s ease;
+}
+
+.budget-progress {
+    background: linear-gradient(
+        90deg,
+        #00c853,
+        #64dd17
+    );
+}
+
+.traveler-alerts {
+
+    padding: 12px;
+
+    margin-bottom: 15px;
+
+    border-radius: 10px;
+
+    background: rgba(
+        255,
+        255,
+        255,
+        .08
+    );
+
+    font-weight: bold;
+
+}
+
+.budget-good {
+    background: linear-gradient(
+        90deg,
+        #00c853,
+        #64dd17
+    );
+}
+
+.budget-warning {
+    background: linear-gradient(
+        90deg,
+        #ffb300,
+        #ffd54f
+    );
+}
+
+.budget-danger {
+    background: linear-gradient(
+        90deg,
+        #d50000,
+        #ff5252
+    );
+}

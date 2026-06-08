@@ -110,10 +110,13 @@
 
                 <div>
                     <label for="destination">Destino:</label>
-                    <input
-                        id="destination"
-                        type="text"
-                        value="GIG">
+                    <select id="destination">
+
+                        <option value="">
+                            Seleccione un destino
+                        </option>
+
+                    </select>
                 </div>
 
                 <button id="executeDecision">
@@ -208,6 +211,14 @@
 
                 <h2>Estado del Viajero</h2>
 
+                <div
+                    id="travelerAlerts"
+                    class="traveler-alerts">
+
+                    ✅ Estado Normal
+
+                </div>
+                
                 <div id="travelerState">
 
                     <div class="state-item">

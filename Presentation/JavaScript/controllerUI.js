@@ -221,6 +221,26 @@ const dijkstraResult =
         'dijkstraResult'
     );
 
+function getPerformanceColor(
+    rating
+) {
+
+    switch(rating) {
+
+        case 'Excellent':
+            return '#4caf50';
+
+        case 'Very Good':
+            return '#8bc34a';
+
+        case 'Good':
+            return '#ffc107';
+
+        default:
+            return '#f44336';
+    }
+}
+
 function showResponse(data) {
 
     console.log(
@@ -270,7 +290,25 @@ function renderAvailableOptions(state) {
     // Flights
     // ==================
 
+    const destinationSelect =
+        document.getElementById('destination');
+
+    destinationSelect.innerHTML =
+        '<option value="">Seleccione un destino</option>';
+
     state.next_flights.forEach(flight => {
+
+        const option =
+            document.createElement('option');
+
+        option.value =
+            flight.destination;
+
+        option.textContent =
+            `${flight.destination}
+            (${flight.distance_km} km)`;
+
+        destinationSelect.appendChild(option);
 
         const div =
             document.createElement('div');
@@ -310,9 +348,60 @@ function renderAvailableOptions(state) {
             <small>
                 Costo: $${activity.cost}
             </small>
+
+            <br>
+
+            <button
+                class="activity-button"
+                data-id="${activity.id}">
+                Realizar
+            </button>
         `;
 
         availableActivities.appendChild(div);
+
+        div
+            .querySelector('.activity-button')
+            .addEventListener(
+                'click',
+                async () => {
+
+                    const journeyId =
+                        journeyIdInput.value.trim();
+
+                    if (!journeyId) {
+                        return;
+                    }
+
+                    try {
+
+                        const response =
+                            await API.executeDecision(
+                                journeyId,
+                                {
+                                    type: 'ACTIVITY',
+                                    activity_id: activity.id
+                                }
+                            );
+
+                        showResponse(response);
+
+                        if (response.success) {
+
+                            getStateButton.click();
+
+                        }
+
+                    }
+
+                    catch(error) {
+
+                        showError(error);
+
+                    }
+
+                }
+            );
 
     });
 
@@ -333,13 +422,91 @@ function renderAvailableOptions(state) {
             </strong>
 
             <small>
-                Pago: $${job.hourly_rate}/h
+                Pago:
+                $${job.hourly_rate}/h
             </small>
+
+            <br>
+
+            <input
+                type="number"
+                min="1"
+                max="${job.max_hours}"
+                value="1"
+                class="job-hours">
+
+            <button
+                class="job-button"
+                data-id="${job.id}"
+                ${job.is_locked ? 'disabled' : ''}>
+                Trabajar
+            </button>
+
+            ${
+                job.is_locked
+                    ? `
+                        <p class="warning-text">
+                            ${job.lock_reason}
+                        </p>
+                    `
+                    : ''
+            }
         `;
 
         availableJobs.appendChild(div);
 
+        const button =
+            div.querySelector('.job-button');
+
+        const hoursInput =
+            div.querySelector('.job-hours');
+
+        button.addEventListener(
+            'click',
+            async () => {
+
+                const journeyId =
+                    journeyIdInput.value.trim();
+
+                if (!journeyId) {
+                    return;
+                }
+
+                try {
+
+                    const response =
+                        await API.executeDecision(
+                            journeyId,
+                            {
+                                type: 'JOB',
+                                job_id: job.id,
+                                hours: Number(
+                                    hoursInput.value
+                                )
+                            }
+                        );
+
+                    showResponse(response);
+
+                    if (response.success) {
+
+                        getStateButton.click();
+
+                    }
+
+                }
+
+                catch(error) {
+
+                    showError(error);
+
+                }
+
+            }
+        );
+
     });
+
 }
 
 async function loadJourneyLog(journeyId) {
@@ -454,6 +621,19 @@ async function loadJourneyReport(
         const report =
             data.report;
 
+        const percentage =
+            report.budget.budget_remaining_percentage;
+
+        let progressClass =
+            'budget-good';
+
+        if (percentage < 35) {
+            progressClass = 'budget-danger';
+        }
+        else if (percentage < 60) {
+            progressClass = 'budget-warning';
+        }
+
         reportContainer.innerHTML = `
 
         <div class="report-section">
@@ -510,6 +690,15 @@ async function loadJourneyReport(
                 ${report.budget.budget_remaining_percentage}%
             </p>
 
+            <div class="progress-container">
+
+                <div
+                    class="progress-bar ${progressClass}"
+                    style="width:${percentage}%">
+                </div>
+
+            </div>
+
         </div>
 
         <div class="report-section">
@@ -520,7 +709,16 @@ async function loadJourneyReport(
 
             <p>
                 Calificación:
-                ${report.efficiency.performance_rating}
+                <span
+                style="
+                color:
+                ${getPerformanceColor(
+                    report.efficiency.performance_rating
+                )}">
+
+                    ${report.efficiency.performance_rating}
+
+                </span>
             </p>
 
             <p>
@@ -579,29 +777,75 @@ async function loadJourneyReport(
                 ${report.time.total_hours}
             </p>
 
+            <div class="time-breakdown">
+
+                <div>
+                    ✈ Vuelos:
+                    ${report.time.flights.hours} h
+                    (${report.time.flights.percentage}%)
+                </div>
+
+                <div>
+                    🎯 Actividades:
+                    ${report.time.activities.hours} h
+                    (${report.time.activities.percentage}%)
+                </div>
+
+                <div>
+                    💼 Trabajos:
+                    ${report.time.jobs.hours} h
+                    (${report.time.jobs.percentage}%)
+                </div>
+
+                <div>
+                    🍔 Comidas:
+                    ${report.time.meals.hours} h
+                    (${report.time.meals.percentage}%)
+                </div>
+
+                <div>
+                    🏨 Hospedaje:
+                    ${report.time.accommodation.hours} h
+                    (${report.time.accommodation.percentage}%)
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="report-section">
+
+            <h3>
+                🏆 Resumen Ejecutivo
+            </h3>
+
             <p>
-                Horas de Vuelo:
-                ${report.time.flights.hours}
+                Calificación:
+                <span
+                style="
+                color:
+                ${getPerformanceColor(
+                    report.efficiency.performance_rating
+                )}">
+
+                    ${report.efficiency.performance_rating}
+
+                </span>
             </p>
 
             <p>
-                Horas en Actividades:
-                ${report.time.activities.hours}
+                Destinos:
+                ${report.efficiency.destinations_visited}
             </p>
 
             <p>
-                Horas Trabajadas:
-                ${report.time.jobs.hours}
+                Presupuesto Final:
+                $${report.budget.final_budget}
             </p>
 
             <p>
-                Horas en Comidas:
-                ${report.time.meals.hours}
-            </p>
-
-            <p>
-                Horas en Hospedaje:
-                ${report.time.accommodation.hours}
+                Eventos:
+                ${report.journey_overview.total_events}
             </p>
 
         </div>
@@ -615,6 +859,52 @@ async function loadJourneyReport(
         console.error(error);
 
     }
+}
+
+function renderTravelerAlerts(state) {
+
+    let alerts = [];
+
+    if (
+        state.budget.budget_critical
+    ) {
+
+        alerts.push(
+            '🔴 Presupuesto Crítico'
+        );
+
+    }
+
+    if (
+        state.mandatory_requirements.meal?.needed
+    ) {
+
+        alerts.push(
+            '🍔 Comida Requerida'
+        );
+
+    }
+
+    if (
+        state.mandatory_requirements.accommodation?.needed
+    ) {
+
+        alerts.push(
+            '🏨 Hospedaje Requerido'
+        );
+
+    }
+
+    const alertsContainer =
+        document.getElementById(
+            'travelerAlerts'
+        );
+
+    alertsContainer.innerHTML =
+        alerts.length
+            ? alerts.join('<br>')
+            : '✅ Estado Normal';
+
 }
 
 function renderTimeline(events) {
@@ -779,16 +1069,17 @@ getStateButton.addEventListener(
                 state.current_airport.country;
 
             mealRequiredValue.textContent =
-                state.mandatory_requirements.meal_required
+                state.mandatory_requirements.meal?.needed
                     ? 'Sí'
                     : 'No';
 
             accommodationRequiredValue.textContent =
-                state.mandatory_requirements.accommodation_required
+                state.mandatory_requirements.accommodation?.needed
                     ? 'Sí'
                     : 'No';
 
             renderAvailableOptions(state);
+            renderTravelerAlerts(state);
             loadJourneyLog(journeyId);
             loadJourneyReport(journeyId);
 
@@ -805,7 +1096,7 @@ getStateButton.addEventListener(
 
 executeDecisionButton.addEventListener('click', async () => {
     const journeyId = journeyIdInput.value.trim();
-    const destination = destinationInput.value.trim().toUpperCase();
+    const destination = destinationInput.value;
 
     if (!journeyId) {
         return showResponse({ error: 'Journey ID es requerido.' });

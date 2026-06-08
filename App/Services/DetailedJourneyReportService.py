@@ -174,11 +174,23 @@ class DetailedJourneyReportService:
                 else:
                     time_by_type["other"] += time_minutes
 
-        # Calculate free time
-        total_time_minutes = final_state.get_total_journey_time() * 60
+        # Calculate total time based on registered events
         allocated_time = sum(time_by_type.values())
-        time_by_type["free_time"] = max(0, total_time_minutes - allocated_time)
 
+        state_total_time_minutes = int(
+            round(final_state.get_total_journey_time() * 60)
+        )
+
+        total_time_minutes = max(
+            allocated_time,
+            state_total_time_minutes
+        )
+
+        time_by_type["free_time"] = max(
+            0,
+            total_time_minutes - allocated_time
+        )
+        
         # Convert to hours and minutes
         result = {}
         for key, minutes in time_by_type.items():
