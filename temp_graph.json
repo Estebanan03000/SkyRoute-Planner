@@ -1404,6 +1404,46 @@
             ],
             "costoBase": 1,
             "estanciaMinima": 120
+        },
+        {
+            "origen": "GRU",
+            "destino": "PTY",
+            "distanciaKm": 5050,
+            "aeronaves": ["Avion Comercial"],
+            "costoBase": 1,
+            "estanciaMinima": 180
+        },
+        {
+            "origen": "GRU",
+            "destino": "MEX",
+            "distanciaKm": 7450,
+            "aeronaves": ["Avion Comercial"],
+            "costoBase": 1,
+            "estanciaMinima": 240
+        },
+        {
+            "origen": "BOG",
+            "destino": "MEX",
+            "distanciaKm": 3150,
+            "aeronaves": ["Avion Comercial"],
+            "costoBase": 1,
+            "estanciaMinima": 180
+        },
+        {
+            "origen": "MDE",
+            "destino": "PTY",
+            "distanciaKm": 530,
+            "aeronaves": ["Avion Regional", "Helice"],
+            "costoBase": 1,
+            "estanciaMinima": 90
+        },
+        {
+            "origen": "VVI",
+            "destino": "UIO",
+            "distanciaKm": 2400,
+            "aeronaves": ["Avion Comercial"],
+            "costoBase": 1,
+            "estanciaMinima": 180
         }
     ]
 }
