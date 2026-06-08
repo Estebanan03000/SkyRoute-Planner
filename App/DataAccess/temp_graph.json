@@ -827,6 +827,174 @@
     ],
     "routes": [
         {
+        "origen": "GRU",
+        "destino": "BSB",
+        "distanciaKm": 870,
+        "aeronaves": ["Avion Comercial","Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "BSB",
+        "destino": "GIG",
+        "distanciaKm": 930,
+        "aeronaves": ["Avion Comercial","Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "GIG",
+        "destino": "BOG",
+        "distanciaKm": 4550,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 180
+        },
+        {
+        "origen": "GRU",
+        "destino": "VVI",
+        "distanciaKm": 1850,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "MVD",
+        "destino": "UIO",
+        "distanciaKm": 1850,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "BOG",
+        "destino": "CTG",
+        "distanciaKm": 650,
+        "aeronaves": ["Avion Regional","Helice"],
+        "costoBase": 1,
+        "estanciaMinima": 90
+        },
+        {
+        "origen": "CTG",
+        "destino": "PTY",
+        "distanciaKm": 520,
+        "aeronaves": ["Avion Regional","Helice"],
+        "costoBase": 1,
+        "estanciaMinima": 90
+        },
+        {
+        "origen": "BOG",
+        "destino": "ADZ",
+        "distanciaKm": 710,
+        "aeronaves": ["Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 90
+        },
+        {
+        "origen": "ADZ",
+        "destino": "PTY",
+        "distanciaKm": 470,
+        "aeronaves": ["Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 90
+        },
+        {
+        "origen": "MDE",
+        "destino": "BOG",
+        "distanciaKm": 215,
+        "aeronaves": ["Avion Regional","Helice"],
+        "costoBase": 1,
+        "estanciaMinima": 90
+        },
+        {
+        "origen": "UIO",
+        "destino": "MDE",
+        "distanciaKm": 820,
+        "aeronaves": ["Avion Comercial","Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "MDE",
+        "destino": "UIO",
+        "distanciaKm": 820,
+        "aeronaves": ["Avion Comercial","Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "CCS",
+        "destino": "BOG",
+        "distanciaKm": 1030,
+        "aeronaves": ["Avion Comercial","Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "BOG",
+        "destino": "CCS",
+        "distanciaKm": 1030,
+        "aeronaves": ["Avion Comercial","Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "PTY",
+        "destino": "SAL",
+        "distanciaKm": 1400,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "SAL",
+        "destino": "MEX",
+        "distanciaKm": 1250,
+        "aeronaves": ["Avion Comercial","Avion Regional"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "SJO",
+        "destino": "MEX",
+        "distanciaKm": 1900,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 150
+        },
+        {
+        "origen": "GUA",
+        "destino": "PTY",
+        "distanciaKm": 1350,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
+        "origen": "PUJ",
+        "destino": "SJU",
+        "distanciaKm": 250,
+        "aeronaves": ["Avion Regional","Helice"],
+        "costoBase": 1,
+        "estanciaMinima": 90
+        },
+        {
+        "origen": "SJU",
+        "destino": "MEX",
+        "distanciaKm": 3400,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 180
+        },
+        {
+        "origen": "PUJ",
+        "destino": "PTY",
+        "distanciaKm": 1800,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 120
+        },
+        {
             "origen": "GRU",
             "destino": "GIG",
             "distanciaKm": 360,
@@ -868,6 +1036,14 @@
             ],
             "costoBase": 1,
             "estanciaMinima": 120
+        },
+        {
+        "origen": "CBB",
+        "destino": "EZE",
+        "distanciaKm": 1100,
+        "aeronaves": ["Avion Comercial"],
+        "costoBase": 1,
+        "estanciaMinima": 120
         },
         {
             "origen": "VVI",

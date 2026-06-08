@@ -223,7 +223,7 @@ class Graph:
         for airport in self._airports:
             if include_secondary_airports or airport.get_isHub():
                 valid_airports.append(airport.get_IATA_code())
-
+        
         return valid_airports
 
     def _reconstruct_path(

@@ -791,18 +791,29 @@ def calculate_dijkstra():
 
         data = request.get_json()
 
-        origin = data.get("origin").upper()
-        destination = data.get("destination").upper()
-        
+        origin = data.get(
+            "origin"
+        ).upper()
+
+        destination = data.get(
+            "destination"
+        ).upper()
+
         criterion = data.get(
             "criterion",
             "cost"
         )
 
+        include_secondary_airports = data.get(
+            "include_secondary_airports",
+            True
+        )
+
         result = _graph.dijkstra(
             origin,
             destination,
-            criterion
+            criterion,
+            include_secondary_airports
         )
 
         return jsonify({
@@ -817,6 +828,154 @@ def calculate_dijkstra():
             "error": str(e)
         }), 500
     
+@main_routes.route(
+    "/api/optimize/budget",
+    methods=["POST"]
+)
+def optimize_by_budget():
+
+    _initialize_services()
+
+    try:
+
+        data = request.get_json()
+
+        origin = data.get("origin", "").upper()
+        budget = float(data.get("budget", 0))
+        include_secondary_airports = data.get(
+            "include_secondary_airports",
+            True
+        )
+
+        if not origin:
+            return jsonify({
+                "success": False,
+                "error": "Origin is required"
+            }), 400
+
+        if budget <= 0:
+            return jsonify({
+                "success": False,
+                "error": "Budget must be positive"
+            }), 400
+
+        result = _planning_service.calculate_max_destinations_by_budget(
+            origin,
+            budget,
+            include_secondary_airports
+        )
+
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@main_routes.route(
+    "/api/optimize/time",
+    methods=["POST"]
+)
+def optimize_by_time():
+
+    _initialize_services()
+
+    try:
+
+        data = request.get_json()
+
+        origin = data.get("origin", "").upper()
+        available_hours = float(data.get("available_hours", 0))
+        include_secondary_airports = data.get(
+            "include_secondary_airports",
+            True
+        )
+
+        if not origin:
+            return jsonify({
+                "success": False,
+                "error": "Origin is required"
+            }), 400
+
+        if available_hours <= 0:
+            return jsonify({
+                "success": False,
+                "error": "Available hours must be positive"
+            }), 400
+
+        result = _planning_service.calculate_max_destinations_by_time(
+            origin,
+            available_hours,
+            include_secondary_airports
+        )
+
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@main_routes.route(
+    "/api/compare-routes",
+    methods=["POST"]
+)
+def compare_routes():
+
+    _initialize_services()
+
+    try:
+
+        data = request.get_json()
+
+        origin = data.get(
+            "origin"
+        ).upper()
+
+        destination = data.get(
+            "destination"
+        ).upper()
+
+        criteria = data.get(
+            "criteria",
+            ["cost"]
+        )
+
+        include_secondary_airports = data.get(
+            "include_secondary_airports",
+            True
+        )
+
+        result = _planning_service.calculate_best_route(
+            origin,
+            destination,
+            criteria,
+            include_secondary_airports
+        )
+
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 @main_routes.route("/api/graph", methods=["GET"])
 def get_graph():
     _initialize_services()

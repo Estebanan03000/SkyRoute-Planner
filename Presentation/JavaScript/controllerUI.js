@@ -118,7 +118,8 @@
 calculateDijkstra: async (
     origin,
     destination,
-    criterion
+    criterion,
+    includeSecondary
 ) => {
 
     const response =
@@ -136,13 +137,113 @@ calculateDijkstra: async (
 
                     origin,
                     destination,
-                    criterion
+                    criterion,
+
+                    include_secondary_airports:
+                        includeSecondary
 
                 })
             }
         );
 
     return response.json();
+},
+
+optimizeByBudget: async (
+    origin,
+    budget,
+    includeSecondary
+) => {
+
+    const response =
+        await fetch(
+            '/api/optimize/budget',
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+
+                body: JSON.stringify({
+                    origin,
+                    budget,
+                    include_secondary_airports:
+                        includeSecondary
+                })
+            }
+        );
+
+    return response.json();
+},
+
+optimizeByTime: async (
+    origin,
+    availableHours,
+    includeSecondary
+) => {
+
+    const response =
+        await fetch(
+            '/api/optimize/time',
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+
+                body: JSON.stringify({
+                    origin,
+                    available_hours:
+                        availableHours,
+                    include_secondary_airports:
+                        includeSecondary
+                })
+            }
+        );
+
+    return response.json();
+},
+
+compareRoutes: async (
+    origin,
+    destination,
+    criteria,
+    includeSecondary
+) => {
+
+    const response =
+        await fetch(
+            '/api/compare-routes',
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+
+                body: JSON.stringify({
+
+                    origin,
+                    destination,
+
+                    criteria,
+
+                    include_secondary_airports:
+                        includeSecondary
+
+                })
+            }
+        );
+
+const text =
+    await response.text();
+
+return JSON.parse(text);
 },
 
 };
@@ -226,6 +327,36 @@ const aircraftInput =
         'aircraft'
     );
 
+const includeSecondaryInput =
+    document.getElementById(
+        'includeSecondary'
+    );
+
+const optimizeBudgetButton =
+    document.getElementById(
+        'optimizeBudgetButton'
+    );
+
+const optimizeTimeButton =
+    document.getElementById(
+        'optimizeTimeButton'
+    );
+
+const optimizationResult =
+    document.getElementById(
+        'optimizationResult'
+    );
+
+const compareRoutesButton =
+    document.getElementById(
+        'compareRoutesButton'
+    );
+
+const comparisonResult =
+    document.getElementById(
+        'comparisonResult'
+    );
+
 let currentFlights = [];
 
 function getPerformanceColor(
@@ -284,6 +415,54 @@ function updateTravelerState(state) {
 
     destinationsValue.textContent =
         state.destinations_visited?.length || 0;
+
+}
+
+function renderComparisonResults(
+    results
+) {
+
+    let html = '';
+
+    Object.entries(results)
+        .forEach(
+
+            ([criterion, route]) => {
+
+                html += `
+
+                    <div
+                        class="comparison-card">
+
+                        <h3>
+
+                            ${criterion.toUpperCase()}
+
+                        </h3>
+
+                        <p>
+
+                            ${route.path.join(
+                                ' → '
+                            )}
+
+                        </p>
+
+                        <p>
+
+                            Peso:
+                            ${route.totalWeight}
+
+                        </p>
+
+                    </div>
+
+                `;
+            }
+        );
+
+    comparisonResult.innerHTML =
+        html;
 
 }
 
@@ -993,6 +1172,71 @@ function renderTimeline(events) {
     });
 }
 
+function renderOptimizationResult(
+    title,
+    result
+) {
+
+    const segmentsHtml =
+        result.segments
+            .map(segment => `
+                <li>
+                    ${segment.origin}
+                    →
+                    ${segment.destination}
+                    |
+                    ✈ ${segment.aircraft}
+                    |
+                    💰 ${segment.cost}
+                    |
+                    ⏱ ${segment.time} min
+                    |
+                    📏 ${segment.distanceKm} km
+                </li>
+            `)
+            .join('');
+
+    optimizationResult.innerHTML = `
+        <div class="optimization-header">
+
+            ${title}
+
+        </div>
+
+        <p>
+            <strong>
+                Ruta:
+            </strong>
+            ${result.visitedDestinations.join(' → ')}
+        </p>
+
+        <p>
+            <strong>
+                Destinos visitados:
+            </strong>
+            ${result.totalVisited}
+        </p>
+
+        <p>
+            <strong>
+                Peso total:
+            </strong>
+            ${result.totalWeight}
+        </p>
+
+        <p>
+            <strong>
+                Restante:
+            </strong>
+            ${result.remainingLimit}
+        </p>
+
+        <ul>
+            ${segmentsHtml}
+        </ul>
+    `;
+}
+
 async function refreshGraph() {
 
     const graphData =
@@ -1298,11 +1542,168 @@ interruptRouteButton.addEventListener(
     }
 );
 
+optimizeBudgetButton.addEventListener(
+    'click',
+    async () => {
+
+        const origin =
+            dijkstraOrigin.value
+                .trim()
+                .toUpperCase();
+
+        const budget =
+            Number(
+                document.getElementById('budget').value
+            );
+
+        const includeSecondary =
+            includeSecondaryInput.checked;
+
+        if (!origin || budget <= 0) {
+            return;
+        }
+
+        const data =
+            await API.optimizeByBudget(
+                origin,
+                budget,
+                includeSecondary
+            );
+
+        if (!data.success) {
+            return showResponse(data);
+        }
+
+        renderOptimizationResult(
+            '💰 Optimización por Presupuesto',
+            data.result
+        );
+    }
+);
+
+optimizeTimeButton.addEventListener(
+    'click',
+    async () => {
+
+        const origin =
+            dijkstraOrigin.value
+                .trim()
+                .toUpperCase();
+
+        const availableHours =
+            Number(
+                prompt(
+                    'Ingrese el tiempo disponible en horas:'
+                )
+            );
+
+        const includeSecondary =
+            includeSecondaryInput.checked;
+
+        if (!origin || availableHours <= 0) {
+            return;
+        }
+
+        const data =
+            await API.optimizeByTime(
+                origin,
+                availableHours,
+                includeSecondary
+            );
+
+        if (!data.success) {
+            return showResponse(data);
+        }
+
+        renderOptimizationResult(
+            '⏱ Optimización por Tiempo',
+            data.result
+        );
+    }
+);
+
+compareRoutesButton.addEventListener(
+    'click',
+    async () => {
+
+        const criteria = [];
+
+        if (
+            document.getElementById(
+                'costCriterion'
+            ).checked
+        ) {
+
+            criteria.push(
+                'cost'
+            );
+
+        }
+
+        if (
+            document.getElementById(
+                'timeCriterion'
+            ).checked
+        ) {
+
+            criteria.push(
+                'time'
+            );
+
+        }
+
+        if (
+            document.getElementById(
+                'distanceCriterion'
+            ).checked
+        ) {
+
+            criteria.push(
+                'distance'
+            );
+
+        }
+
+        if (
+            criteria.length === 0
+        ) {
+            return;
+        }
+
+        const data =
+            await API.compareRoutes(
+                dijkstraOrigin.value
+                    .trim()
+                    .toUpperCase(),
+
+                dijkstraDestination.value
+                    .trim()
+                    .toUpperCase(),
+
+                criteria,
+
+                includeSecondaryInput.checked
+            );
+
+        if (!data.success) {
+            return;
+        }
+
+        renderComparisonResults(
+            data.result
+        );
+
+    }
+);
+
 calculateRouteButton.addEventListener(
     'click',
     async () => {
 
         try {
+
+            const includeSecondary =
+                includeSecondaryInput.checked;
 
             const origin =
                 dijkstraOrigin.value
@@ -1325,10 +1726,11 @@ calculateRouteButton.addEventListener(
             }
 
             const result =
-                await API.calculateDijkstra(
+                await API.calculateDijkstra(  
                     origin,
                     destination,
-                    criterion
+                    criterion,
+                    includeSecondary
                 );
 
             const route =
@@ -1359,7 +1761,16 @@ calculateRouteButton.addEventListener(
                     `)
                     .join('');
 
-            dijkstraResult.innerHTML = `
+            const airportMode =
+                includeSecondary
+                    ? 'Todos los aeropuertos'
+                    : 'Solo hubs';
+
+            dijkstraResult.innerHTML += `
+                <p>
+                    Modo:
+                    ${airportMode}
+                </p>
 
                 <h3>
                     Ruta Encontrada
@@ -1401,4 +1812,7 @@ calculateRouteButton.addEventListener(
 
         }
     }
+
+    
+
 );

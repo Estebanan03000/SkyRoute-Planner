@@ -201,6 +201,23 @@
 
                     </div>
 
+                    <div class="checkbox-container">
+
+                        <label class="custom-checkbox">
+
+                            <input
+                                type="checkbox"
+                                id="includeSecondary"
+                                checked>
+
+                            <span class="checkmark"></span>
+
+                            Incluir aeropuertos secundarios
+
+                        </label>
+
+                    </div>
+
                     <button id="calculateRouteButton">
 
                         Calcular Ruta
@@ -213,6 +230,103 @@
 
                     <p>
                         No se ha calculado ninguna ruta.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <section class="card">
+
+                <h2>
+                    📊 Comparación de Criterios
+                </h2>
+
+                <div class="criteria-container">
+
+                    <label class="criterion-chip">
+
+                        <input
+                            type="checkbox"
+                            id="costCriterion"
+                            checked>
+
+                        <span>
+                            💰 Costo
+                        </span>
+
+                    </label>
+
+                    <label class="criterion-chip">
+
+                        <input
+                            type="checkbox"
+                            id="timeCriterion"
+                            checked>
+
+                        <span>
+                            ⏱ Tiempo
+                        </span>
+
+                    </label>
+
+                    <label class="criterion-chip">
+
+                        <input
+                            type="checkbox"
+                            id="distanceCriterion"
+                            checked>
+
+                        <span>
+                            📏 Distancia
+                        </span>
+                        
+                    </label>
+
+                </div>
+
+                <button id="compareRoutesButton">
+
+                    Comparar Rutas
+
+                </button>
+
+                <div id="comparisonResult">
+
+                </div>
+
+            </section>
+
+            <section class="card">
+
+                <h2>
+                    📈 Planificación Automática
+                </h2>
+
+                <div class="optimization-buttons">
+
+                    <button
+                        id="optimizeBudgetButton"
+                        class="budget-button">
+
+                        💰 Optimizar por Presupuesto
+
+                    </button>
+
+                    <button
+                        id="optimizeTimeButton"
+                        class="time-button">
+
+                        ⏱ Optimizar por Tiempo
+
+                    </button>
+
+                </div>
+
+                <div id="optimizationResult">
+
+                    <p>
+                        No se ha ejecutado ninguna optimización.
                     </p>
 
                 </div>
